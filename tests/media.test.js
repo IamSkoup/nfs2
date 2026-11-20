@@ -112,7 +112,7 @@ test("Звук адреналина прекращается при отпуск
 test("Пауза останавливает музыку, ветер и шаги и сохраняет позицию трека", () => {
   globalThis.Audio = Sound;
   const audio = new AudioManager(fresh().settings);
-  assert.equal(audio.s.music, 0.15);
+  assert.equal(audio.s.music, 0.2);
   audio.unlock();
   audio.mode("race");
   audio.ambience(15);
