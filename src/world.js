@@ -325,17 +325,19 @@ export class World extends Actors {
         new T.PlaneGeometry(27, 2.05),
         new T.MeshBasicMaterial({ map: tex, side: T.DoubleSide }),
       );
-      mesh.position.set(p.x, terrain(p.x, p.z) + 5.6, p.z);
+      const heightAt = sign => terrain(p.x + Math.cos(p.h)*13.45*sign, p.z - Math.sin(p.h)*13.45*sign);
+      const top = Math.max(heightAt(-1),heightAt(1),terrain(p.x,p.z))+6.5;
+      mesh.position.set(p.x, top-1.025, p.z);
       mesh.rotation.y = p.h + Math.PI;
       this.items.add(mesh);
       for (const sign of [-1, 1]) {
         const x = p.x + Math.cos(p.h) * 13.45 * sign,
           z = p.z - Math.sin(p.h) * 13.45 * sign;
         add(
-          new T.CylinderGeometry(0.13, 0.16, 6.3, 6),
+          new T.CylinderGeometry(0.13, 0.16, top-heightAt(sign), 6),
           0x685849,
           x,
-          terrain(x, z) + 3.15,
+          (top+heightAt(sign))/2,
           z,
         );
       }
@@ -354,18 +356,6 @@ export class World extends Actors {
         light.position.set(p.x + side * 6, terrain(p.x, p.z) + 4, p.z);
         this.items.add(light);
       }
-    }
-    const end = r.event.route.sample(r.event.route.length);
-    for (let sign of [-1, 1]) {
-      let x = end.x + Math.cos(end.h) * 7.3 * sign,
-        z = end.z - Math.sin(end.h) * 7.3 * sign;
-      add(
-        new T.CylinderGeometry(0.12, 0.14, 4, 5),
-        0xeab15a,
-        x,
-        terrain(x, z) + 2,
-        z,
-      );
     }
   }
   coat(look) {

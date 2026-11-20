@@ -1,3 +1,4 @@
+import {buildFence} from "./fence.js";
 import { roadHalfWidth } from "./map.js";
 import * as T from "./vendor.js";
 import { edges, terrain } from "./map.js";
@@ -187,12 +188,12 @@ export function forest(scene) {
       grass: new T.ConeGeometry(1, 1, 3),
     },
     dummy = new T.Object3D();
-  function add(k, x, y, z, w, h, d, c, rot = 0, tilt = 0) {
+  function add(k, x, y, z, w, h, d, c, rot = 0, tilt = 0, pitch = 0) {
     const cell = k + ":" + Math.floor(x / 150) + ":" + Math.floor(z / 150);
     if (!batches.has(cell)) batches.set(cell, { k, items: [] });
     dummy.position.set(x, y, z);
     dummy.scale.set(w, h, d);
-    dummy.rotation.set(0, rot, tilt);
+    dummy.rotation.set(pitch, rot, tilt, "YXZ");
     dummy.updateMatrix();
     batches.get(cell).items.push([dummy.matrix.clone(), new T.Color(c)]);
   }
@@ -390,7 +391,22 @@ export function forest(scene) {
     if (!solids.has(key)) solids.set(key, []);
     solids.get(key).unshift([x, z, 1.05, true]);
   }
+  const posts = new Set();
+  const fenceHit = buildFence((a,b) => {
+    for(const p of [a,b]) {
+      const key=p.x.toFixed(3)+","+p.z.toFixed(3);
+      if(posts.has(key)) continue;
+      posts.add(key);
+      add("box",p.x,terrain(p.x,p.z)+0.83,p.z,0.22,1.68,0.22,0x997355);
+    }
+    const dx=b.x-a.x,dz=b.z-a.z,ya=terrain(a.x,a.z),yb=terrain(b.x,b.z);
+    for(const height of [0.58,1.26]){
+      add("box",(a.x+b.x)/2,(ya+yb)/2+height,(a.z+b.z)/2,0.14,0.22,Math.hypot(dx,dz,yb-ya)+0.03,0xa38565,Math.atan2(dx,dz),0,-Math.atan2(yb-ya,Math.hypot(dx,dz)));
+    }
+  });
   function collides(x, z) {
+    const wall=fenceHit(x,z);
+    if(wall) return wall;
     let cx = Math.floor(x / 12),
       cz = Math.floor(z / 12);
     for (let i = cx - 1; i <= cx + 1; i++)

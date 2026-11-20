@@ -150,3 +150,23 @@ test("Возврат после длинного съезда восстанав
   assert.ok(p.s>110);
   assert.equal(p.surface,"dry");
 });
+
+test("Забор держит игрока у обочины и оставляет проезды на развилках", async () => {
+  const {buildFence}=await import("../src/fence.js");
+  const {edges,roadHalfWidth}=await import("../src/map.js");
+  const {roadDistance}=await import("../src/physics.js");
+  const wall=buildFence(()=>{});
+  for(const path of Object.values(edges))
+    for(const [x,z] of path) assert.equal(wall(x,z),null);
+  const r=new Race(events[5],fresh(),true);
+  r.collides=wall;
+  const p=r.player, pos=r.event.route.sample(40);
+  Object.assign(p,pos,{heading:pos.h+Math.PI/2,speed:26});
+  let hit=false;
+  for(let i=0;i<240;i++) {
+    r.tick(1/60,{gas:true,steer:0});
+    hit ||= r.impact?.kind==="wood";
+    assert.ok(roadDistance(p.x,p.z)<roadHalfWidth+3);
+  }
+  assert.ok(hit);
+});

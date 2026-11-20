@@ -89,7 +89,7 @@ function smooth(list) {
 }
 for (const [key, mid] of Object.entries(defs))
   edges[key] = smooth([nodes[key[0]], ...mid, nodes[key[1]]]);
-export function makeRoute(code, startDistance = 0) {
+export function makeRoute(code, startDistance = 0, finishOnStraight = false) {
   let pts = [];
   for (let i = 1; i < code.length; i++) {
     const k = code.slice(i - 1, i + 1);
@@ -103,6 +103,18 @@ export function makeRoute(code, startDistance = 0) {
       start++;
     }
     pts = [...pts.slice(start, -1), ...pts.slice(0, start + 1)];
+  }
+  if (finishOnStraight && code[0] !== code.at(-1)) {
+    let best = Infinity, cut = pts.length - 1, distance = 0;
+    for (let i=pts.length-2;i>6;i--) {
+      distance += Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);
+      if(distance>85) break;
+      if(distance<36) continue;
+      const heading=(a,b)=>Math.atan2(pts[b][0]-pts[a][0],pts[b][1]-pts[a][1]);
+      const bend=Math.abs(angle(heading(i-5,i)-heading(i,i+5)));
+      if(bend<best){best=bend;cut=i;}
+    }
+    pts=pts.slice(0,cut+1);
   }
   const ds = [0];
   for (let i = 1; i < pts.length; i++)

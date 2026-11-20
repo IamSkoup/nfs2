@@ -23,7 +23,7 @@ export class Race {
       for (
         let d = 65, i = 0;
         d < event.route.length - 22;
-        d += event.type === "Драг" ? 65 : 125, i++
+        d += event.type === "Драг" ? 53 : 90, i++
       ) {
         this.obstacles.push({
           s: d + lap * event.route.length,
@@ -138,6 +138,10 @@ export class Race {
           r,
           hit.animal ? "animal" : hit.kind === "stone" ? "stone" : "wood",
         );
+        if (hit.kind === "fence" && this.time >= (r.nextFenceHit || 0)) {
+          r.speed *= 0.52;
+          r.nextFenceHit = this.time + 0.6;
+        }
         if (hit.animal && this.time >= (r.nextAnimalHit || 0)) {
           r.speed *= 0.12;
           r.vx *= 0.12;
