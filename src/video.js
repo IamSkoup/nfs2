@@ -4,7 +4,7 @@ export function cinema(id, s, done) {
     play = layer.querySelector("[data-play]");
   layer.hidden = false;
   play.hidden = true;
-  video.volume = s.settings.video;
+  video.volume = s.settings.video * 0.5;
   let ended = false;
   function finish(watched) {
     if (ended) return;
@@ -49,7 +49,7 @@ export function opening(settings, done) {
   const controller = new AbortController();
   layer.hidden = false;
   play.hidden = true;
-  video.volume = settings.video;
+  video.volume = settings.video * 0.5;
   function finish() {
     if (closed) return;
     closed = true;

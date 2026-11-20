@@ -69,6 +69,7 @@ test("Отказ autoplay, ручной запуск, пропуск и отсу
     };
   globalThis.document = { querySelector: () => layer };
   cinema(5, s, () => count++);
+  assert.equal(v.volume, s.settings.video * 0.5);
   await Promise.resolve();
   assert.equal(play.hidden, false);
   blocked = false;
@@ -162,6 +163,7 @@ test("Сбой заставки и преждевременный ended не о�
   try {
     let done=0;
     opening(fresh().settings,()=>done++);
+    assert.equal(v.volume, fresh().settings.video * 0.5);
     await new Promise(resolve=>setTimeout(resolve,10));
     v.onerror(); v.onended();
     assert.equal(done,0);
