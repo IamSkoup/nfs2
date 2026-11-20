@@ -1,12 +1,27 @@
 import { edges, roadHalfWidth } from "./map.js";
-import { roadDistance } from "./physics.js";
 
-// Trace the outside of the combined road network so connecting roads share one
-// opening. Each visible rail and its collision segment use the same endpoints.
-export function buildFence(rail) {
+// Contour only the supplied route. Nearby sections merge at shared junctions.
+export function buildFence(rail, samples = Object.values(edges).flat()) {
   const step = 5,
     width = roadHalfWidth + 2.5;
-  const samples = Object.values(edges).flat();
+  const cells = new Map();
+  const bin = 24;
+  for (const [x, z] of samples) {
+    const key = Math.floor(x / bin) + "," + Math.floor(z / bin);
+    if (!cells.has(key)) cells.set(key, []);
+    cells.get(key).push([x, z]);
+  }
+  function roadDistance(x, z) {
+    let best = (width + step * 2) ** 2;
+    const cx = Math.floor(x / bin),
+      cz = Math.floor(z / bin);
+    for (let i = cx - 1; i <= cx + 1; i++)
+      for (let j = cz - 1; j <= cz + 1; j++) {
+        for (const [X, Z] of cells.get(i + "," + j) || [])
+          best = Math.min(best, (X - x) ** 2 + (Z - z) ** 2);
+      }
+    return Math.sqrt(best);
+  }
   const bounds = (axis) => {
     const values = samples.map((p) => p[axis]);
     return [

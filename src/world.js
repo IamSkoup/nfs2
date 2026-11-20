@@ -1,3 +1,4 @@
+import { courseFence } from "./course-fence.js";
 import * as T from "./vendor.js";
 import { Actors } from "./actors.js";
 import { forest } from "./forest.js";
@@ -205,6 +206,7 @@ export class World extends Actors {
   }
   populate(r, look) {
     this.items.traverse((o) => {
+      if (o.isInstancedMesh) o.dispose();
       o.geometry?.dispose();
       o.material?.map?.dispose();
       o.material?.dispose();
@@ -221,7 +223,10 @@ export class World extends Actors {
     this.cloud = [];
     this.marks.count = 0;
     this.markIndex = 0;
-    if (!r || r.free) return;
+    if (!r) return;
+    const fence = courseFence(this.items, r.free ? undefined : r.event.route.pts);
+    r.collides = (x,z) => fence(x,z) || this.environment.collides(x,z);
+    if (r.free) return;
     const add = (g, c, x, y, z) => {
       const m = new T.Mesh(
         g,

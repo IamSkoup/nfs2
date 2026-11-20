@@ -1,4 +1,4 @@
-import {buildFence} from "./fence.js";
+
 import { roadHalfWidth } from "./map.js";
 import * as T from "./vendor.js";
 import { edges, terrain } from "./map.js";
@@ -199,6 +199,24 @@ export function forest(scene) {
   }
   const greens = [0x30423b, 0x273f39, 0x354d45, 0x334641],
     trees = [];
+  // Plant the verges first so they remain populated at low vegetation density.
+  for (const path of Object.values(edges)) {
+    for (const side of [-1, 1]) {
+      for (let i = side < 0 ? 15 : 20; i < path.length - 12; i += 7 + Math.floor(rand()*5)) {
+        const [cx,cz]=path[i];
+        const yaw=Math.atan2(path[i+1][0]-path[i-1][0],path[i+1][1]-path[i-1][1]);
+        const offset=side*(roadHalfWidth+7+rand()*5);
+        const x=cx+offset*Math.cos(yaw), z=cz-offset*Math.sin(yaw);
+        if(roadDistance(x,z)<roadHalfWidth+6) continue;
+        const y=terrain(x,z), h=8+rand()*5, w=2.1+rand()*1.3;
+        add("wood",x,y+h*.36,z,.37,h*.72,.37,0x695344);
+        for(let tier=0;tier<3;tier++) {
+          const radius=w*(1-tier*.19);
+          add("pine",x,y+h*(.43+tier*.21),z,radius,h*.54,radius,greens[i%greens.length],i*.27);
+        }
+      }
+    }
+  }
   for (let i = 0; i < 11500; i++) {
     let x = (rand() - 0.5) * 1000,
       z = (rand() - 0.47) * 1040,
@@ -391,22 +409,7 @@ export function forest(scene) {
     if (!solids.has(key)) solids.set(key, []);
     solids.get(key).unshift([x, z, 1.05, true]);
   }
-  const posts = new Set();
-  const fenceHit = buildFence((a,b) => {
-    for(const p of [a,b]) {
-      const key=p.x.toFixed(3)+","+p.z.toFixed(3);
-      if(posts.has(key)) continue;
-      posts.add(key);
-      add("box",p.x,terrain(p.x,p.z)+0.83,p.z,0.22,1.68,0.22,0x997355);
-    }
-    const dx=b.x-a.x,dz=b.z-a.z,ya=terrain(a.x,a.z),yb=terrain(b.x,b.z);
-    for(const height of [0.58,1.26]){
-      add("box",(a.x+b.x)/2,(ya+yb)/2+height,(a.z+b.z)/2,0.14,0.22,Math.hypot(dx,dz,yb-ya)+0.03,0xa38565,Math.atan2(dx,dz),0,-Math.atan2(yb-ya,Math.hypot(dx,dz)));
-    }
-  });
   function collides(x, z) {
-    const wall=fenceHit(x,z);
-    if(wall) return wall;
     let cx = Math.floor(x / 12),
       cz = Math.floor(z / 12);
     for (let i = cx - 1; i <= cx + 1; i++)

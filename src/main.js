@@ -156,7 +156,6 @@ function start() {
 function begin(e, free = false) {
   paused = false;
   r = new Race(e, s, free);
-  r.collides = world.environment.collides;
   page = "race";
   input.reset();
   engine.remainder = 0;
