@@ -88,3 +88,29 @@ test("Свободный бег и быстрые гонки", () => {
   assert.equal(settle(s, r, false), 0);
   assert.deepEqual(s.done, []);
 });
+
+test("Оба драга можно выиграть без тюнинга и адреналина по звуковому сигналу", async () => {
+  for (const event of events.filter((e) => e.type === "Драг")) {
+    const race = new Race(event, fresh());
+    let reaction = -1,
+      cues = 0;
+    for (let frame = 0; frame < 12000 && !race.over; frame++) {
+      const p = race.player;
+      if (p.breathCue) {
+        p.breathCue = false;
+        reaction = frame + 13;
+        cues++;
+      }
+      const control = drive(p, race, 0);
+      race.tick(1 / 60, {
+        ...control,
+        gas: true,
+        boost: false,
+        breath: frame === reaction,
+      });
+    }
+    assert.ok(cues >= 4);
+    assert.ok(race.over);
+    assert.equal(race.rank, 1, event.name);
+  }
+});

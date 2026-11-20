@@ -24,7 +24,7 @@ export const fresh = () => ({
   cosmetics: [0],
   look: 0,
   settings: {
-    music: 0.25,
+    music: 0.15,
     sfx: 0.55,
     video: 0.9,
     quality: "Среднее",

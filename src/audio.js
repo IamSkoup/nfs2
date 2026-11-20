@@ -6,6 +6,7 @@ export class AudioManager {
     this.missing = new Set();
     this.players = [];
     this.last = {};
+    this.played = { menu: new Set(), race: new Set() };
     this.fx = new Map();
   }
   unlock() {
@@ -21,7 +22,7 @@ export class AudioManager {
     this.setBoost(false);
     this.kind = kind;
     this.current = null;
-    if (!kind) {
+    if (!kind || kind === "drag") {
       for (const a of this.players) {
         a.pause();
         a.src = "";
@@ -32,15 +33,23 @@ export class AudioManager {
   }
   next() {
     const kind = this.kind;
-    if (!kind || this.paused) return;
+    if (!kind || kind === "drag" || this.paused) return;
     const count = kind === "menu" ? 4 : 9;
-    let all = Array.from({ length: count }, (_, i) => i + 1).filter(
+    const available = Array.from({ length: count }, (_, i) => i + 1).filter(
       (i) => !this.missing.has(kind + i),
     );
-    if (!all.length) return;
-    if (all.length > 1) all = all.filter((i) => i !== this.last[kind]);
-    const i = all[Math.floor(Math.random() * all.length)],
-      a = new Audio();
+    if (!available.length) return;
+    const played = this.played[kind];
+    let choices = available.filter((i) => !played.has(i));
+    if (!choices.length) {
+      played.clear();
+      choices = available.filter((i) => i !== this.last[kind]);
+      if (!choices.length) choices = available;
+    }
+    const i = choices[Math.floor(Math.random() * choices.length)];
+    const a = new Audio();
+    const previous = this.last[kind];
+    played.add(i);
     this.last[kind] = i;
     this.players.push(a);
     this.current = a;
@@ -51,6 +60,7 @@ export class AudioManager {
     a.onerror = () => {
       if (a !== this.current) return;
       this.missing.add(kind + i);
+      this.last[kind] = previous;
       this.current = null;
       this.next();
     };
@@ -69,7 +79,12 @@ export class AudioManager {
     }
   }
   ambience(speed) {
-    if (!this.enabled || this.paused || this.kind !== "race") return;
+    if (
+      !this.enabled ||
+      this.paused ||
+      !(this.kind === "race" || this.kind === "drag")
+    )
+      return;
     if (!this.wind) {
       this.wind = new Audio("assets/sfx/wind.wav");
       this.wind.loop = true;
@@ -93,25 +108,38 @@ export class AudioManager {
       return true;
     });
   }
-  effect(name, rate = 1) {
+  impact(kind, speed) {
+    this.effect(
+      "hit-" + kind,
+      0.94 + Math.random() * 0.12,
+      Math.min(1, 0.78 + speed / 100),
+    );
+  }
+  effect(name, rate = 1, volume = 0.5) {
     if (this.paused || !this.enabled || !this.s.sfx || !this.kind) return;
     let a = this.fx.get(name);
     if (!a) {
       a = new Audio(
         "assets/sfx/" +
           name +
-          (["leaves", "gravel", "mud"].includes(name) ? ".wav" : ".ogg"),
+          (name.startsWith("hit-") ||
+          ["leaves", "gravel", "mud", "breath-cue"].includes(name)
+            ? ".wav"
+            : ".ogg"),
       );
       this.fx.set(name, a);
     }
-    a.volume = this.s.sfx * 0.5;
+    a.volume = this.s.sfx * volume;
     a.playbackRate = rate;
     a.currentTime = 0;
     a.play().catch(() => {});
   }
   setBoost(active) {
     const playing = Boolean(
-      active && this.enabled && this.kind === "race" && this.s.sfx,
+      active &&
+        this.enabled &&
+        (this.kind === "race" || this.kind === "drag") &&
+        this.s.sfx,
     );
     if (playing === Boolean(this.boostActive)) return;
     this.boostActive = playing;

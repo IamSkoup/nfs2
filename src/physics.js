@@ -32,9 +32,9 @@ export function move(r, c, dt, route, event, bend, free = false) {
         (r.boosting
           ? -19
           : r.speed > 6 && Math.abs(bend) > 0.12 && Math.abs(r.offset) < 4
-            ? 7
+            ? 8
             : r.speed > 2
-              ? 0.85
+              ? 1
               : 0),
     0,
     st.tank,

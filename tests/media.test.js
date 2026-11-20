@@ -112,7 +112,7 @@ test("Звук адреналина прекращается при отпуск
 test("Пауза останавливает музыку, ветер и шаги и сохраняет позицию трека", () => {
   globalThis.Audio = Sound;
   const audio = new AudioManager(fresh().settings);
-  assert.equal(audio.s.music, 0.25);
+  assert.equal(audio.s.music, 0.15);
   audio.unlock();
   audio.mode("race");
   audio.ambience(15);
@@ -126,4 +126,25 @@ test("Пауза останавливает музыку, ветер и шаги
   assert.equal(audio.current, track);
   assert.equal(track.currentTime, 18);
   assert.equal(track.paused, false);
+});
+
+test("Целый цикл плейлиста и переход в следующий проходят без повторов", () => {
+  globalThis.Audio = Sound;
+  const a = new AudioManager(fresh().settings);
+  a.unlock();
+  for (const [kind, size] of [["menu", 4], ["race", 9]]) {
+    a.mode(kind);
+    let previous;
+    for (let cycle = 0; cycle < 4; cycle++) {
+      const tracks = new Set();
+      for (let i = 0; i < size; i++) {
+        const track = a.current.src;
+        assert.notEqual(track, previous);
+        tracks.add(track);
+        previous = track;
+        a.current.onended();
+      }
+      assert.equal(tracks.size, size);
+    }
+  }
 });

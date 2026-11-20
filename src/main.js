@@ -1,4 +1,5 @@
 import { World } from "./world.js";
+import { idealWindow } from "./drag.js";
 import { Race } from "./race.js";
 import { events } from "./config.js";
 import { read, write } from "./save.js";
@@ -60,6 +61,8 @@ function refresh() {
     clips: () => ui.movies(s),
     settings: () => ui.settings(s),
     result: () => ui.result(r, reward, career),
+    thirdVictory: () =>
+      '<section class="panel"><h1>Победа</h1><p>Встречная полоса</p><button class="primary" data-act="return">Вернуться в карьеру</button></section>',
     claimed: () =>
       '<section class="panel"><h1>Кайон побеждён</h1><p>Награда зачислена.</p><button class="primary" data-act="return">Вернуться в карьеру</button></section>',
     race: () =>
@@ -94,6 +97,7 @@ function menu(p) {
   if (p === "career" || p === "quick") {
     career = p === "career";
     if (career && !s.scenes.includes(1)) return movie(1, () => menu("career"));
+    if (career && s.pending === 3) p = "thirdVictory";
     if (career && s.offer === "won") p = "claimed";
     if (career && s.pending === 8) {
       movie(8, () => {
@@ -159,7 +163,7 @@ function begin(e, free = false) {
   audio.setBoost(false);
   world.populate(r, s.look);
   world.update(1 / 60, r, page, s.settings);
-  audio.mode("race", true);
+  audio.mode(!free && e.type === "Драг" ? "drag" : "race", true);
   refresh();
 }
 function finish() {
@@ -176,7 +180,7 @@ function finish() {
     audio.mode("menu");
     refresh();
   };
-  if (s.pending) {
+  if (s.pending === 8 && career && win && id === 9) {
     let clip = s.pending;
     movie(clip, () => {
       s.pending = 0;
@@ -235,6 +239,20 @@ function action(a) {
     menu("career");
   }
   if (a === "return") {
+    if (
+      career &&
+      s.pending === 3 &&
+      (page === "thirdVictory" ||
+        (page === "result" && r?.rank === 1 && r.event.id === 2))
+    ) {
+      movie(3, () => {
+        s.pending = 0;
+        save();
+        selected = Math.min(9, s.done.length);
+        menu("career");
+      });
+      return;
+    }
     if (career && s.offer === "won") {
       movie(6, () => {
         s.offer = "closed";
@@ -396,7 +414,7 @@ function updateHud() {
     : `<b>${r.rank} <small>/ ${r.racers.length}</small></b><span>${e.laps > 1 ? "Круг " + Math.min(e.laps, p.lap + 1) + " / " + e.laps : ui.km(r.total - p.s)}　 ·　 ${ui.time(e.type === "На время" ? Math.max(0, r.limit - r.time) : r.time)}</span>`;
   if ($("phase")) {
     const dial = document.querySelector(".dial"),
-      green = (0.9 - p.st.breath / 100) * 180;
+      green = idealWindow(p) * 180;
     dial.style.background =
       "conic-gradient(from -90deg at 50% 100%,#757e79 0 106deg,#53ade3 106deg " +
       green +
@@ -433,7 +451,7 @@ function updateHud() {
         (e.type === "Драг" ? "　·　Удержите старт в зелёной зоне" : "")
       : r.time < 7
         ? e.type === "Драг"
-          ? ui.keyName(keys.breath) + " · Перевести дыхание в зелёной зоне"
+          ? ui.keyName(keys.breath) + " · Перевести дыхание по сигналу"
           : ui.keyName(keys.gas) +
             " · Газ　 " +
             ui.keyName(keys.left) +
@@ -461,6 +479,14 @@ function frame(now) {
   audio.update(dt);
   if (page === "race" && !paused) {
     engine.advance(dt, r, input);
+    if (r.player.breathCue) {
+      audio.effect("breath-cue", 1, 0.92);
+      r.player.breathCue = false;
+    }
+    if (r.impact) {
+      audio.impact(r.impact.kind, r.impact.speed);
+      r.impact = null;
+    }
     if (
       r.time - lastStep > Math.max(0.15, 0.45 - r.player.speed * 0.012) &&
       r.player.speed > 2
@@ -544,12 +570,7 @@ try {
   world.update(0.1, null, "home", s.settings);
   refresh();
   requestAnimationFrame(frame);
-  if (s.pending === 3)
-    movie(3, () => {
-      s.pending = 0;
-      save();
-      menu("career");
-    });
+  if (s.pending === 3) menu("thirdVictory");
   else if (s.pending === 8) menu("career");
   else menu("home");
 } catch (err) {

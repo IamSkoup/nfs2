@@ -116,6 +116,11 @@ window.qa={s,get race(){return r},get page(){return page},finishTest(win){r.rank
     await wait("race");
     await page.evaluate(() => qa.finishTest(true));
     await wait(id === 2 ? "result" : "ending");
+    if (id === 2) {
+      assert.ok(!requests.includes("cut-scene3.mp4"));
+      await click("return");
+      await wait("career");
+    }
     assert.equal(requests.at(-1), "cut-scene" + (id === 2 ? 3 : 8) + ".mp4");
   }
   await page.evaluate(() => qa.selectStage(6));

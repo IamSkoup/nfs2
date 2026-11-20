@@ -1,5 +1,6 @@
 import { stats } from "./tuning.js";
 import { angle, clamp } from "./map.js";
+import { idealWindow } from "./drag.js";
 import { drive } from "./ai.js";
 import { move, roadDistance } from "./physics.js";
 export class Race {
@@ -41,9 +42,16 @@ export class Race {
       (_, id) => {
         const st = stats(id ? { upgrades: {} } : save);
         if (id) {
-          st.speed *= event.level * (1 + 0.017 * id);
-          st.accel *= event.level + 0.08 * id;
+          const pace =
+            event.type === "Драг"
+              ? event.id === 3
+                ? 0.76
+                : 0.88
+              : event.level;
+          st.speed *= pace * (1 + 0.017 * id);
+          st.accel *= pace + 0.08 * id;
           st.turn += 0.1 * id;
+          st.grip *= 1 + 0.15 * event.level;
         }
         let offset =
             (id === 0 ? 0 : id === 1 ? -1 : id === 2 ? 1 : -0.5) * 3.85,
@@ -111,7 +119,7 @@ export class Race {
           1,
         );
         if (this.countdown <= 0) {
-          let ideal = r.rev >= 0.9 - r.st.breath / 100 && r.rev <= 0.9;
+          let ideal = r.rev >= idealWindow(r) && r.rev <= 0.9;
           r.speed =
             r.st.launch * (drag ? (ideal ? 2 : r.rev > 0.9 ? 0.45 : 1) : 1);
           r.rev = 0.1;
@@ -132,6 +140,10 @@ export class Race {
       move(r, c, dt, t, e, bend, this.free && !r.id);
       const hit = this.collides?.(r.x, r.z);
       if (hit) {
+        this.contact(
+          r,
+          hit.animal ? "animal" : hit.kind === "stone" ? "stone" : "wood",
+        );
         if (hit.animal && this.time >= (r.nextAnimalHit || 0)) {
           r.speed *= 0.12;
           r.vx *= 0.12;
@@ -168,6 +180,8 @@ export class Race {
         if (o.s > r.s) break;
         r.lastObstacle = i;
         if (Math.abs(r.offset - o.off) < 1.35) {
+          if (o.kind !== "Лужа")
+            this.contact(r, o.kind === "Камень" ? "stone" : "wood");
           r.speed *= o.kind === "Лужа" ? 0.74 : 0.46;
           if (!r.id) this.say(o.kind);
         }
@@ -236,6 +250,12 @@ export class Race {
       if (this.player.out) this.rank = this.racers.length - this.eliminated + 1;
       if (e.type === "На время" && this.time > this.limit) this.rank = 2;
     }
+  }
+  contact(racer, kind) {
+    if (racer.id || racer.speed < 2 || this.time < (this.nextImpact || 0))
+      return;
+    this.impact = { kind, speed: racer.speed };
+    this.nextImpact = this.time + 0.65;
   }
   recover() {
     let p = this.player,

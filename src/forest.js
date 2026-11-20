@@ -354,7 +354,7 @@ export function forest(scene) {
       const key = Math.floor(x / 12) + "," + Math.floor(z / 12);
       if (roadDistance(x, z) < radius + 8) continue;
       if (!solids.has(key)) solids.set(key, []);
-      solids.get(key).push([x, z, radius]);
+      solids.get(key).push([x, z, radius, false, k]);
     }
   }
   // Roe deer stand at the shoulders of several forest roads.
@@ -394,9 +394,9 @@ export function forest(scene) {
       cz = Math.floor(z / 12);
     for (let i = cx - 1; i <= cx + 1; i++)
       for (let j = cz - 1; j <= cz + 1; j++)
-        for (let [X, Z, r, animal] of solids.get(i + "," + j) || [])
+        for (let [X, Z, r, animal, kind] of solids.get(i + "," + j) || [])
           if ((x - X) ** 2 + (z - Z) ** 2 < (r + 0.35) ** 2)
-            return { x: X, z: Z, r: r + 0.35, animal };
+            return { x: X, z: Z, r: r + 0.35, animal, kind };
     return null;
   }
   const chunks = [];
