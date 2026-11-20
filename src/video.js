@@ -36,5 +36,5 @@ export function cinema(id, s, done) {
       else finish(false);
     });
   play.onclick = start;
-  start();
+  if (!document.querySelector("#rotate").open) start();
 }

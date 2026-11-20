@@ -771,8 +771,9 @@ body[data-page="race"] #shade {
   place-items: center;
 }
 #cinema video {
-  width: 100%;
-  height: 100%;
+  width: min(100vw, 177.77778dvh);
+  height: auto;
+  aspect-ratio: 16 / 9;
   object-fit: contain;
 }
 #cinema button {
@@ -1162,3 +1163,6 @@ body[data-page="race"] #shade {
     top: 12%;
   }
 }
+
+#rotate[open] { position: fixed; inset: 0; margin: 0; width: 100%; height: 100%; max-width: none; max-height: none; border: 0; display: grid; place-items: center; background: #101211; color: white; font: 600 1.6rem system-ui; }
+#rotate::backdrop { background: #101211; }

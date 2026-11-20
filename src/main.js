@@ -93,6 +93,7 @@ function menu(p) {
   audio.mode("menu");
   if (p === "career" || p === "quick") {
     career = p === "career";
+    if (career && !s.scenes.includes(1)) return movie(1, () => menu("career"));
     if (career && s.offer === "won") p = "claimed";
     if (career && s.pending === 8) {
       movie(8, () => {
@@ -448,7 +449,7 @@ function updateHud() {
 }
 function frame(now) {
   requestAnimationFrame(frame);
-  if (!world || video || document.hidden) return;
+  if (!world || video || portrait.matches || document.hidden) return;
   const dt = engine.elapsed(now, s.settings.fps);
   if (!dt) return;
   audio.update(dt);
@@ -483,6 +484,24 @@ function frame(now) {
       s.settings,
     );
 }
+const portrait = matchMedia("(orientation: portrait) and (pointer: coarse) and (max-width: 700px)");
+function updateOrientation() {
+  const dialog = $("rotate");
+  const player = $("cinema").querySelector("video");
+  if (portrait.matches) {
+    if (!dialog.open) dialog.showModal();
+    input.reset();
+    if (page === "race" && !paused && !video) action("pause");
+    if (video) player.pause();
+  } else {
+    dialog.close();
+    if (video && player.paused) $("cinema").querySelector("[data-play]").click();
+  }
+  engine.stamp = performance.now();
+}
+$("rotate").oncancel = e => e.preventDefault();
+portrait.addEventListener("change", updateOrientation);
+updateOrientation();
 document.addEventListener("visibilitychange", () => {
   input.reset();
   if (document.hidden && page === "race" && !paused && !video) action("pause");
@@ -507,8 +526,7 @@ try {
   world.update(0.1, null, "home", s.settings);
   refresh();
   requestAnimationFrame(frame);
-  if (!s.scenes.includes(1)) movie(1, () => menu("home"));
-  else if (s.pending === 3)
+  if (s.pending === 3)
     movie(3, () => {
       s.pending = 0;
       save();
