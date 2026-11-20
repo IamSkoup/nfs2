@@ -1171,3 +1171,28 @@ body[data-page="race"] #shade {
 #wrong-way { position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%); font: 900 italic clamp(32px, 6vw, 82px)/1 system-ui; white-space: nowrap; color: #fff; background: #9b3019eb; border: 2px solid #ffb679; padding: .18em .48em; animation: wrong-pulse .8s ease-in-out infinite alternate; }
 @keyframes wrong-pulse { to { background: #cc4118; box-shadow: 0 0 25px #f65c2b99; } }
 @media (prefers-reduced-motion: reduce) { #wrong-way { animation: none; } }
+
+.pause-label { display: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  .racebar { top: max(6px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); gap: 6px; padding: 4px; z-index: 1; }
+  .racebar button { min-width: 46px; min-height: 46px; touch-action: manipulation; }
+  .racebar [data-act="pause"] { padding: 0 12px; background: #ffae51; color: #161812; border-radius: 5px; font: bold 18px BC, sans-serif; }
+  .pause-label { display: inline; }
+  #touch { --pad: clamp(54px, 8vw, 72px); }
+  #touch > div { gap: 7px; max-width: none; }
+  #touch button { min-height: var(--pad); min-width: var(--pad); padding: 4px 8px; font: bold clamp(16px, 2.6vw, 20px)/1 BC, sans-serif; border-radius: 10px; background: #17231fe8; }
+  #touch > div:first-child button { width: calc(var(--pad) + 6px); font-size: 24px; }
+  #touch > div:last-child { display: grid; grid-template-columns: repeat(2, clamp(78px, 11vw, 105px)); }
+  #touch [data-key="gas"] { grid-column: 2; grid-row: 2; background: #78501de8; border-color: #ffc273; }
+  #touch [data-key="brake"] { grid-column: 1; grid-row: 2; }
+  #touch [data-key="boost"] { grid-column: 2; grid-row: 1; }
+  #touch [data-key="breath"] { grid-column: 1; grid-row: 1; }
+  #touch button.pressed { background: #b4782c; border-color: white; }
+  .mini { bottom: calc(clamp(54px, 8vw, 72px) + 17px + env(safe-area-inset-bottom)); }
+  .gauge { bottom: calc(2 * clamp(54px, 8vw, 72px) + 24px + env(safe-area-inset-bottom)); }
+  .tach { bottom: max(8px, env(safe-area-inset-bottom)); }
+  body:has(#phase) #tip { bottom: 110px; max-width: 32%; pointer-events: none; }
+}
+@media (pointer: coarse) and (max-width: 720px) and (orientation: landscape) {
+  .racebar > div { display: none; }
+}
