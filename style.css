@@ -1196,3 +1196,14 @@ body[data-page="race"] #shade {
 @media (pointer: coarse) and (max-width: 720px) and (orientation: landscape) {
   .racebar > div { display: none; }
 }
+
+#boot-progress { display:block; width:min(64vw,320px); height:8px; margin:14px auto; accent-color:#ffae51; }
+
+.loading:has(#boot-progress) {
+  min-height: 65vh;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  text-align: center;
+  font: 600 clamp(20px, 4vw, 34px) BC, sans-serif;
+}

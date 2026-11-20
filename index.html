@@ -9,12 +9,12 @@
     <meta name="theme-color" content="#101514" />
     <title>Need for Speed: Fuli 2</title>
     <link rel="stylesheet" href="style.css" />
-    <script src="preload.js" async></script>
+    <link rel="modulepreload" href="preload.js" />
   </head>
   <body>
     <canvas id="world" aria-label="Трёхмерная сцена"></canvas>
     <div id="shade"></div>
-    <header id="top">
+    <header id="top" hidden>
       <button data-go="home" class="brand" aria-label="Главное меню">
         <i></i><i></i><i></i><b>FULI <em>2</em></b></button
       ><span id="section">ГЛАВНОЕ МЕНЮ</span>
@@ -23,7 +23,7 @@
       </div>
       <button class="gear" data-go="settings" aria-label="Настройки">⚙</button>
     </header>
-    <main id="ui"><div class="loading">Загрузка леса…</div></main>
+    <main id="ui"><div class="loading"><label for="boot-progress">Загрузка игры <span id="boot-count"></span></label><progress id="boot-progress" max="100" value="0"></progress></div></main>
     <aside id="hud" hidden></aside>
     <div id="touch" hidden>
       <div>

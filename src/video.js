@@ -15,7 +15,7 @@ export function cinema(id, s, done) {
     video.removeAttribute("src");
     video.load();
     layer.hidden = true;
-    if (watched && !s.seen.includes(id)) s.seen.push(id);
+    if (id && watched && !s.seen.includes(id)) s.seen.push(id);
     done();
   }
   const timer = setTimeout(() => {
@@ -28,7 +28,7 @@ export function cinema(id, s, done) {
     play.hidden = true;
   };
   layer.querySelector("[data-skip]").onclick = () => finish(true);
-  video.src = "assets/cutscenes/cut-scene" + (id === 1 ? "" : id) + ".mp4";
+  video.src = !id ? "video.mp4" : "assets/cutscenes/cut-scene" + (id === 1 ? "" : id) + ".mp4";
   const start = () =>
     video.play().catch((err) => {
       if (ended || err.name === "AbortError") return;

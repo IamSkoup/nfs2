@@ -1,3 +1,4 @@
+import { prepareAssets } from "../preload.js";
 import { World } from "./world.js";
 import { idealWindow } from "./drag.js";
 import { Race } from "./race.js";
@@ -565,14 +566,22 @@ try {
       post: 0,
     });
   world.settings(s.settings);
-  await world.load();
+  const [hasIntro] = await Promise.all([
+    prepareAssets((done, total) => {
+      $("boot-count").textContent = Math.round((done / total) * 100) + "%";
+      $("boot-progress").value = (done / total) * 100;
+    }),
+    world.load(),
+  ]);
   world.populate(null, s.look);
   world.update(0.1, null, "home", s.settings);
-  refresh();
+  if (hasIntro) {
+    video = true;
+    await new Promise((resolve) => cinema(0, s, resolve));
+    video = false;
+  }
+  menu("home");
   requestAnimationFrame(frame);
-  if (s.pending === 3) menu("thirdVictory");
-  else if (s.pending === 8) menu("career");
-  else menu("home");
 } catch (err) {
   console.error(err);
   $("ui").innerHTML =

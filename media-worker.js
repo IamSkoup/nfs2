@@ -1,52 +1,10 @@
 const cacheName = "fuli2-media-v1";
-const files = [
-  "cutscenes/cut-scene.mp4",
-  ...Array.from({ length: 4 }, (_, i) => "music/menu" + (i + 1) + ".mp3"),
-  ...Array.from(
-    { length: 7 },
-    (_, i) => "cutscenes/cut-scene" + (i + 2) + ".mp4",
-  ),
-  ...Array.from({ length: 9 }, (_, i) => "music/race" + (i + 1) + ".mp3"),
-].map((name) => new URL("assets/" + name, self.registration.scope).href);
 self.addEventListener("install", (event) =>
   event.waitUntil(self.skipWaiting()),
 );
 self.addEventListener("activate", (event) =>
   event.waitUntil(self.clients.claim()),
 );
-let pending;
-async function preload() {
-  const cache = await caches.open(cacheName);
-  async function loadFile(url) {
-    try {
-      const saved = await cache.match(url);
-      const headers = {};
-      const etag = saved?.headers.get("etag");
-      const modified = saved?.headers.get("last-modified");
-      if (etag) headers["If-None-Match"] = etag;
-      else if (modified) headers["If-Modified-Since"] = modified;
-      else if (saved) return;
-      const response = await fetch(url, { priority: "low", headers });
-      if (response.status === 200) await cache.put(url, response);
-    } catch {}
-  }
-  const videos = files.filter(url => url.endsWith(".mp4"));
-  const music = files.filter(url => url.endsWith(".mp3"));
-  const preloadMusic = async () => {
-    for (const url of music) await loadFile(url);
-  };
-  await Promise.all([...videos.map(loadFile), preloadMusic()]);
-}
-self.addEventListener("message", (event) => {
-  if (event.data === "preload") {
-    pending ??= preload()
-      .catch(() => {})
-      .finally(() => {
-        pending = null;
-      });
-    event.waitUntil(pending);
-  }
-});
 async function serve(request) {
   const cached = await caches.match(request.url, { cacheName });
   if (!cached) return fetch(request);
@@ -78,6 +36,15 @@ async function serve(request) {
   });
 }
 self.addEventListener("fetch", (event) => {
-  if (event.request.method === "GET" && files.includes(event.request.url))
+  const url = new URL(event.request.url);
+  const root = self.registration.scope;
+  if (
+    event.request.method === "GET" &&
+    !event.request.headers.has("X-Fuli-Preload") &&
+    (url.href === root + "video.mp4" ||
+      ["music", "cutscenes", "sfx", "fonts"].some((group) =>
+        url.href.startsWith(root + "assets/" + group + "/"),
+      ))
+  )
     event.respondWith(serve(event.request).catch(() => fetch(event.request)));
 });
