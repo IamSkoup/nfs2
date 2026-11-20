@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101514" />
+    <title>Need for Speed: Fuli 2</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="world" aria-label="Трёхмерная сцена"></canvas>
+    <div id="shade"></div>
+    <header id="top">
+      <button data-go="home" class="brand" aria-label="Главное меню">
+        <i></i><i></i><i></i><b>FULI <em>2</em></b></button
+      ><span id="section">ГЛАВНОЕ МЕНЮ</span>
+      <div class="wallet">
+        <small>БАЛАНС</small><strong id="bank">0</strong> ₵
+      </div>
+      <button class="gear" data-go="settings" aria-label="Настройки">⚙</button>
+    </header>
+    <main id="ui"><div class="loading">Загрузка леса…</div></main>
+    <aside id="hud" hidden></aside>
+    <div id="touch" hidden>
+      <div>
+        <button data-key="left">◀</button><button data-key="right">▶</button>
+      </div>
+      <div>
+        <button data-key="breath">Перевести дыхание</button
+        ><button data-key="boost">Адреналин</button
+        ><button data-key="brake">Тормоз</button
+        ><button data-key="gas">Газ</button>
+      </div>
+    </div>
+    <div id="notice" role="status"></div>
+    <div id="cinema" hidden>
+      <video playsinline preload="auto"></video
+      ><button data-play hidden>Воспроизвести</button
+      ><button data-skip>Пропустить ›</button>
+    </div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
