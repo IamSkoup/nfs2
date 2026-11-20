@@ -1,6 +1,6 @@
 const cacheName = "fuli2-media-v1";
 const media = [
-  "video.mp4",
+  "assets/cutscenes/video.mp4",
   ...Array.from(
     { length: 8 },
     (_, i) => "assets/cutscenes/cut-scene" + (i ? i + 1 : "") + ".mp4",
@@ -52,7 +52,7 @@ export async function prepareAssets(report) {
     try {
       const url = new URL(path, document.baseURI);
       if (cachedURLs.has(url.href)) {
-        if (path === "video.mp4") hasIntro = true;
+        if (path === "assets/cutscenes/video.mp4") hasIntro = true;
         return;
       }
       const headers = {"X-Fuli-Preload":"1"};
@@ -62,7 +62,7 @@ export async function prepareAssets(report) {
         signal: controller.signal,
       });
       if (response.status !== 200) return;
-      if (path === "video.mp4") hasIntro = true;
+      if (path === "assets/cutscenes/video.mp4") hasIntro = true;
       if (cache) await cache.put(url, response);
       else await response.arrayBuffer();
     } catch {

@@ -41,7 +41,7 @@ self.addEventListener("fetch", (event) => {
   if (
     event.request.method === "GET" &&
     !event.request.headers.has("X-Fuli-Preload") &&
-    (url.href === root + "video.mp4" ||
+    (url.href === root + "assets/cutscenes/video.mp4" ||
       ["music", "cutscenes", "sfx", "fonts"].some((group) =>
         url.href.startsWith(root + "assets/" + group + "/"),
       ))

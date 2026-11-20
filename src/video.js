@@ -28,7 +28,7 @@ export function cinema(id, s, done) {
     play.hidden = true;
   };
   layer.querySelector("[data-skip]").onclick = () => finish(true);
-  video.src = !id ? "video.mp4" : "assets/cutscenes/cut-scene" + (id === 1 ? "" : id) + ".mp4";
+  video.src = !id ? "assets/cutscenes/video.mp4" : "assets/cutscenes/cut-scene" + (id === 1 ? "" : id) + ".mp4";
   const start = () =>
     video.play().catch((err) => {
       if (ended || err.name === "AbortError") return;
