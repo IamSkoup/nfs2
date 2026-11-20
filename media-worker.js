@@ -17,25 +17,25 @@ self.addEventListener("activate", (event) =>
 let pending;
 async function preload() {
   const cache = await caches.open(cacheName);
-  async function loadGroup(urls) {
-    for (const url of urls) {
-      try {
-        const saved = await cache.match(url);
-        const headers = {};
-        const etag = saved?.headers.get("etag");
-        const modified = saved?.headers.get("last-modified");
-        if (etag) headers["If-None-Match"] = etag;
-        else if (modified) headers["If-Modified-Since"] = modified;
-        else if (saved) continue;
-        const response = await fetch(url, { priority: "low", headers });
-        if (response.status === 200) await cache.put(url, response);
-      } catch {}
-    }
+  async function loadFile(url) {
+    try {
+      const saved = await cache.match(url);
+      const headers = {};
+      const etag = saved?.headers.get("etag");
+      const modified = saved?.headers.get("last-modified");
+      if (etag) headers["If-None-Match"] = etag;
+      else if (modified) headers["If-Modified-Since"] = modified;
+      else if (saved) return;
+      const response = await fetch(url, { priority: "low", headers });
+      if (response.status === 200) await cache.put(url, response);
+    } catch {}
   }
-  await Promise.all([
-    loadGroup(files.filter((url) => url.endsWith(".mp3"))),
-    loadGroup(files.filter((url) => url.endsWith(".mp4"))),
-  ]);
+  const videos = files.filter(url => url.endsWith(".mp4"));
+  const music = files.filter(url => url.endsWith(".mp3"));
+  const preloadMusic = async () => {
+    for (const url of music) await loadFile(url);
+  };
+  await Promise.all([...videos.map(loadFile), preloadMusic()]);
 }
 self.addEventListener("message", (event) => {
   if (event.data === "preload") {
