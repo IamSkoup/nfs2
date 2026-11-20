@@ -1,5 +1,6 @@
 import { prepareAssets } from "../preload.js";
 import { World } from "./world.js";
+import { raceShoulder } from "./map.js";
 import { idealWindow } from "./drag.js";
 import { Race } from "./race.js";
 import { events } from "./config.js";
@@ -437,7 +438,7 @@ function updateHud() {
     const near = route.project(p.x, p.z, d);
     const wrong =
       r.countdown <= 0 &&
-      (near.dist > 14 ||
+      (near.dist > raceShoulder + 6 ||
         (p.speed > 1 && Math.cos(p.heading - route.sample(near.s).h) < -0.35));
     $("wrong-way").hidden = !wrong;
     junction.textContent =

@@ -1,5 +1,5 @@
 import { stats } from "./tuning.js";
-import { angle, clamp } from "./map.js";
+import { raceShoulder, angle, clamp } from "./map.js";
 import { idealWindow } from "./drag.js";
 import { drive } from "./ai.js";
 import { move, roadDistance } from "./physics.js";
@@ -130,7 +130,7 @@ export class Race {
         bend = angle(t.sample(Math.min(t.length, s + 12)).h - t.sample(s).h);
       const c = r.id ? drive(r, this, bend) : input;
       if (this.free && !r.id)
-        r.surface = roadDistance(r.x, r.z) > 7 ? "grass" : "dry";
+        r.surface = roadDistance(r.x, r.z) > raceShoulder ? "grass" : "dry";
       move(r, c, dt, t, e, bend, this.free && !r.id);
       const hit = this.collides?.(r.x, r.z);
       if (hit) {
@@ -266,6 +266,8 @@ export class Race {
       speed: 0,
       offset: 0,
       side: 0,
+      detour: 0,
+      routeDistance: 0,
       lane: 0,
     });
   }

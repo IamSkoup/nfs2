@@ -120,7 +120,7 @@ test("Северный отсев засчитывает круг на прям�
   const event = events[5];
   const route = event.route;
   assert.ok(Math.abs(route.sample(12).h - route.sample(route.length - 12).h) < 0.04);
-  for (const offset of [-6, 0, 6]) {
+  for (const offset of [-16, -6, 0, 6, 16]) {
     const race = new Race(event, fresh());
     race.countdown = 0;
     const distance = route.length - 9;
@@ -134,4 +134,19 @@ test("Северный отсев засчитывает круг на прям�
     assert.equal(race.player.lap, 1);
     assert.ok(race.player.s > route.length + 10);
   }
+});
+
+test("Возврат после длинного съезда восстанавливает прогресс и скорость", async () => {
+  const {move} = await import("../src/physics.js");
+  const route = events[5].route;
+  const p = new Race(events[5], fresh()).player;
+  p.s = 30;
+  for (let i=0; i<180; i++) {
+    const d=30+i*.5, off=i<110 ? 38 : Math.max(12,38-(i-110)*.7);
+    const pos=route.sample(d,off);
+    Object.assign(p,pos,{heading:pos.h,speed:26,vx:26*Math.sin(pos.h),vz:26*Math.cos(pos.h)});
+    move(p,{gas:true,steer:0},1/50,route,events[5],0);
+  }
+  assert.ok(p.s>110);
+  assert.equal(p.surface,"dry");
 });

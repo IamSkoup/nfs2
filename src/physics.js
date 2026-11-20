@@ -1,4 +1,4 @@
-import { angle, clamp, edges, terrain } from "./map.js";
+import { angle, clamp, raceShoulder, edges, terrain } from "./map.js";
 import { dragStep } from "./drag.js";
 export const surfaces = {
   dry: [1, 1],
@@ -11,7 +11,7 @@ export function move(r, c, dt, route, event, bend, free = false) {
   let f = r.surface;
   if (!free) {
     f =
-      Math.abs(r.offset) > 7
+      (r.routeDistance ?? Math.abs(r.offset)) > raceShoulder
         ? "grass"
         : event.weather === "Дождь"
           ? Math.sin(r.s * 0.035) > 0.66
@@ -83,13 +83,18 @@ export function move(r, c, dt, route, event, bend, free = false) {
     }
     const lap = r.lap,
       prev = r.s - lap * route.length,
-      near = route.project(r.x, r.z, prev);
+      reach = 20 + (r.detour || 0),
+      near = route.project(r.x, r.z, prev, r.detour ? reach : 0);
+    r.routeDistance = near.dist;
     r.offset = near.off;
     r.side = c.steer * r.speed * 0.25;
-    if (near.dist < 13 && Math.abs(near.s - prev) < 20) {
+    if (near.dist <= raceShoulder + 4 && Math.abs(near.s - prev) <= reach) {
+      r.detour = 0;
       r.s = lap * route.length + near.s;
-      if (near.s >= route.length - 0.65 && near.dist < 7)
+      if (near.s >= route.length - 0.65 && near.dist <= raceShoulder)
         r.s = (lap + 1) * route.length;
+    } else {
+      r.detour = Math.min(route.length / 2, (r.detour || 0) + Math.hypot(r.vx,r.vz)*dt*1.4);
     }
     return;
   }

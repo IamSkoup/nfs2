@@ -1,3 +1,5 @@
+export const roadHalfWidth = 13;
+export const raceShoulder = 20;
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const terrain = (x, z) =>
   2.5 * Math.sin(x * 0.019) +
@@ -130,7 +132,7 @@ export function makeRoute(code, startDistance = 0) {
       h = Math.atan2(b.x - a.x, b.z - a.z);
     return { x: p.x - Math.cos(h) * offset, z: p.z + Math.sin(h) * offset, h };
   }
-  function project(x, z, previous) {
+  function project(x, z, previous, reach = 0) {
     let lo = 0,
       hi = ds.length - 1;
     while (hi - lo > 1) {
@@ -142,10 +144,11 @@ export function makeRoute(code, startDistance = 0) {
       s = previous,
       off = 0;
     for (
-      let i = Math.max(0, lo - 10);
-      i < Math.min(pts.length - 1, lo + 12);
+      let i = Math.max(0, lo - 10 - Math.ceil(reach));
+      i < Math.min(pts.length - 1, lo + 12 + Math.ceil(reach));
       i++
     ) {
+      if (reach && (ds[i] > previous + reach || ds[i+1] < previous - reach)) continue;
       const a = pts[i],
         b = pts[i + 1],
         dx = b[0] - a[0],

@@ -255,7 +255,7 @@ export class World extends Actors {
       }
     }
     for (let d = 16; d < r.event.route.length; d += 24) {
-      const p = r.event.route.sample(d, 6.8);
+      const p = r.event.route.sample(d, 12.6);
       let m = add(
         new T.ConeGeometry(0.23, 0.65, 4),
         0xff9829,
@@ -322,15 +322,15 @@ export class World extends Actors {
       const tex = new T.CanvasTexture(c);
       tex.colorSpace = T.SRGBColorSpace;
       const mesh = new T.Mesh(
-        new T.PlaneGeometry(14.8, 2.05),
+        new T.PlaneGeometry(27, 2.05),
         new T.MeshBasicMaterial({ map: tex, side: T.DoubleSide }),
       );
       mesh.position.set(p.x, terrain(p.x, p.z) + 5.6, p.z);
       mesh.rotation.y = p.h + Math.PI;
       this.items.add(mesh);
       for (const sign of [-1, 1]) {
-        const x = p.x + Math.cos(p.h) * 7.35 * sign,
-          z = p.z - Math.sin(p.h) * 7.35 * sign;
+        const x = p.x + Math.cos(p.h) * 13.45 * sign,
+          z = p.z - Math.sin(p.h) * 13.45 * sign;
         add(
           new T.CylinderGeometry(0.13, 0.16, 6.3, 6),
           0x685849,

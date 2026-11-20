@@ -1,3 +1,4 @@
+import { roadHalfWidth } from "./map.js";
 import * as T from "./vendor.js";
 import { edges, terrain } from "./map.js";
 import { roadDistance } from "./physics.js";
@@ -131,7 +132,7 @@ export function forest(scene) {
         h = Math.atan2(b[0] - a[0], b[1] - a[1]);
       d += Math.hypot(x - a[0], z - a[1]);
       for (let j = 0; j < 5; j++) {
-        const off = (j - 2) * (3.7 + 0.16 * Math.sin(d * 0.16));
+        const off = (j - 2) * (roadHalfWidth / 2 + 0.16 * Math.sin(d * 0.16));
         let X = x + Math.cos(h) * off,
           Z = z - Math.sin(h) * off;
         pos.push(X, terrain(X, Z) + 0.13, Z);
@@ -202,7 +203,7 @@ export function forest(scene) {
       z = (rand() - 0.47) * 1040,
       dist = roadDistance(x, z),
       y = terrain(x, z);
-    if (dist < 9 || Math.hypot(x, z) < 20) continue;
+    if (dist < roadHalfWidth + 2 || Math.hypot(x, z) < 20) continue;
     const clearing = Math.sin(x * 0.027) * Math.cos(z * 0.021) > 0.35;
     if (i < 4750 && (!clearing || rand() < 0.1)) {
       let h = 7 + rand() ** 1.3 * 19,
@@ -321,7 +322,7 @@ export function forest(scene) {
   for (let i = 0; i < 9100; i++) {
     let x = (rand() - 0.5) * 690,
       z = (rand() - 0.4) * 800;
-    if (roadDistance(x, z) < 8) continue;
+    if (roadDistance(x, z) < roadHalfWidth + 1) continue;
     let y = terrain(x, z),
       c = rand() > 0.5 ? 0x5f6240 : 0x415444;
     for (let j = 0; j < 3; j++)
@@ -352,7 +353,7 @@ export function forest(scene) {
       if (k === "box" && (radius < 1 || Math.hypot(a[4], a[5], a[6]) < 2))
         continue;
       const key = Math.floor(x / 12) + "," + Math.floor(z / 12);
-      if (roadDistance(x, z) < radius + 8) continue;
+      if (roadDistance(x, z) < radius + roadHalfWidth + 1) continue;
       if (!solids.has(key)) solids.set(key, []);
       solids.get(key).push([x, z, radius, false, k]);
     }
