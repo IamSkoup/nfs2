@@ -132,6 +132,13 @@ export class Race {
       move(r, c, dt, t, e, bend, this.free && !r.id);
       const hit = this.collides?.(r.x, r.z);
       if (hit) {
+        if (hit.animal && this.time >= (r.nextAnimalHit || 0)) {
+          r.speed *= 0.12;
+          r.vx *= 0.12;
+          r.vz *= 0.12;
+          r.nextAnimalHit = this.time + 0.8;
+          if (!r.id) this.say("Косуля");
+        }
         const dx = r.x - hit.x,
           dz = r.z - hit.z,
           d = Math.hypot(dx, dz) || 1;

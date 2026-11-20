@@ -1,7 +1,7 @@
 import * as T from "./vendor.js";
 import { Actors } from "./actors.js";
 import { forest } from "./forest.js";
-import { terrain, clamp } from "./map.js";
+import { terrain, clamp, edges } from "./map.js";
 const vec = (x, y, z) => new T.Vector3(x, y, z);
 export class World extends Actors {
   constructor(canvas) {
@@ -266,6 +266,38 @@ export class World extends Actors {
       m.rotation.x = Math.PI * 0.5;
       m.rotation.z = -p.h;
       m.material.emissive.setHex(0x915124);
+    }
+    // Mark unused exits at junctions along this event.
+    for (const [edge, points] of Object.entries(edges)) {
+      const code = r.event.code;
+      if (code.includes(edge) || code.includes([...edge].reverse().join("")))
+        continue;
+      for (const side of [0, 1]) {
+        if (!code.includes(edge[side])) continue;
+        const path = side ? [...points].reverse() : points;
+        let i = 1;
+        while (
+          i < path.length - 1 &&
+          Math.hypot(path[i][0] - path[0][0], path[i][1] - path[0][1]) < 18
+        )
+          i++;
+        const [x, z] = path[i],
+          prev = path[i - 1];
+        const h = Math.atan2(x - prev[0], z - prev[1]);
+        for (let k = -3; k <= 3; k++) {
+          const X = x + k * 1.6 * Math.cos(h),
+            Z = z - k * 1.6 * Math.sin(h);
+          const panel = add(
+            new T.BoxGeometry(1.6, 0.85, 0.3),
+            k % 2 ? 0xff9a32 : 0xffeacc,
+            X,
+            terrain(X, Z) + 1.05,
+            Z,
+          );
+          panel.rotation.y = h;
+          panel.material.emissive.setHex(k % 2 ? 0x954414 : 0x746645);
+        }
+      }
     }
     const banner = (p, label) => {
       const c = document.createElement("canvas");

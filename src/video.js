@@ -20,7 +20,7 @@ export function cinema(id, s, done) {
   }
   const timer = setTimeout(() => {
     if (video.readyState === 0) finish(false);
-  }, 7000);
+  }, 45000);
   video.onended = () => finish(true);
   video.onerror = () => finish(false);
   video.onplaying = () => {
@@ -31,7 +31,7 @@ export function cinema(id, s, done) {
   video.src = "assets/cutscenes/cut-scene" + (id === 1 ? "" : id) + ".mp4";
   const start = () =>
     video.play().catch((err) => {
-      if (ended) return;
+      if (ended || err.name === "AbortError") return;
       if (err.name === "NotAllowedError") play.hidden = false;
       else finish(false);
     });

@@ -357,14 +357,46 @@ export function forest(scene) {
       solids.get(key).push([x, z, radius]);
     }
   }
+  // Roe deer stand at the shoulders of several forest roads.
+  for (const [edge, fraction, off] of [
+    ["BC", 0.46, 4.9],
+    ["DA", 0.28, -6.2],
+    ["GH", 0.31, 5.1],
+    ["IJ", 0.7, -5],
+    ["LE", 0.52, 6],
+    ["EF", 0.36, -5.3],
+  ]) {
+    const path = edges[edge],
+      i = Math.floor(path.length * fraction),
+      [cx, cz] = path[i];
+    const h = Math.atan2(path[i + 1][0] - cx, path[i + 1][1] - cz);
+    const x = cx + Math.cos(h) * off,
+      z = cz - Math.sin(h) * off,
+      y = terrain(x, z) + 0.14;
+    const part = (dx, dy, dz, w, height, depth, color) =>
+      add("stone", x + dx, y + dy, z + dz, w, height, depth, color);
+    part(0, 1, 0, 0.47, 0.51, 0.94, 0xaa7851);
+    part(0, 1.49, 0.64, 0.27, 0.55, 0.28, 0xba885b);
+    part(0, 1.92, 0.77, 0.28, 0.24, 0.34, 0xc19569);
+    part(0, 1.87, 1.05, 0.17, 0.14, 0.2, 0x53483f);
+    part(0, 1.12, -0.85, 0.2, 0.2, 0.19, 0xe8d8b4);
+    for (const side of [-1, 1]) {
+      part(side * 0.19, 2.14, 0.69, 0.11, 0.26, 0.08, 0xbb966c);
+      for (const stride of [-1, 1])
+        part(side * 0.28, 0.51, stride * 0.54, 0.09, 0.54, 0.1, 0x896b51);
+    }
+    const key = Math.floor(x / 12) + "," + Math.floor(z / 12);
+    if (!solids.has(key)) solids.set(key, []);
+    solids.get(key).unshift([x, z, 1.05, true]);
+  }
   function collides(x, z) {
     let cx = Math.floor(x / 12),
       cz = Math.floor(z / 12);
     for (let i = cx - 1; i <= cx + 1; i++)
       for (let j = cz - 1; j <= cz + 1; j++)
-        for (let [X, Z, r] of solids.get(i + "," + j) || [])
+        for (let [X, Z, r, animal] of solids.get(i + "," + j) || [])
           if ((x - X) ** 2 + (z - Z) ** 2 < (r + 0.35) ** 2)
-            return { x: X, z: Z, r: r + 0.35 };
+            return { x: X, z: Z, r: r + 0.35, animal };
     return null;
   }
   const chunks = [];

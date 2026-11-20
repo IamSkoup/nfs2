@@ -30,22 +30,52 @@ export function chart(e, s, interactive = false, quick = false) {
 }
 export function dots(r) {
   let el = document.querySelector("#dots");
-  if (el)
-    el.innerHTML = r.racers
-      .filter((a) => !a.out)
+  if (!el) return;
+  const [cx, cy] = xy([r.player.x, r.player.z]);
+  const size = r.free ? 260 : 175;
+  el.ownerSVGElement.setAttribute(
+    "viewBox",
+    [cx - size / 2, cy - size / 2, size, size].join(" "),
+  );
+  const route = r.event.route;
+  const next = [];
+  if (!r.free) {
+    for (
+      let d = r.player.s;
+      d <= Math.min(r.total - 0.001, r.player.s + 90);
+      d += 3
+    ) {
+      const p = route.sample(d % route.length);
+      next.push(xy([p.x, p.z]).join(","));
+    }
+  }
+  el.innerHTML =
+    '<polyline points="' +
+    next.join(" ") +
+    '" fill="none" stroke="#fff5ba" stroke-width="4"/>' +
+    r.racers
+      .filter((a) => a.id && !a.out)
       .map((a) => {
-        let [x, y] = xy([a.x, a.z]);
+        const [x, y] = xy([a.x, a.z]);
         return (
           '<circle cx="' +
           x +
           '" cy="' +
           y +
-          '" r="' +
-          (a.id ? 9 : 13) +
-          '" fill="' +
-          (a.id ? "#a2adba" : "white") +
-          '"/>'
+          '" r="3.5" fill="#b3d8f5" stroke="#182025"/>'
         );
       })
-      .join("");
+      .join("") +
+    '<path d="M0 -9 L6 6 L0 3 L-6 6 Z" fill="white" stroke="#372817" stroke-width="1.6" transform="translate(' +
+    cx +
+    " " +
+    cy +
+    ") rotate(" +
+    (Math.atan2(
+      1.08 * Math.sin(r.player.heading),
+      0.99 * Math.cos(r.player.heading),
+    ) *
+      180) /
+      Math.PI +
+    ')"/>';
 }

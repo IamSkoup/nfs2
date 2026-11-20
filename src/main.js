@@ -208,7 +208,7 @@ function action(a) {
   }
   if (a === "pause" && page === "race") {
     paused = !paused;
-    if (paused) audio.setBoost(false);
+    audio.setPaused(paused);
     input.reset();
     refresh();
     return;
@@ -415,8 +415,14 @@ function updateHud() {
       a = route.sample(d + 4),
       b = route.sample(d + 28),
       turn = Math.atan2(Math.sin(b.h - a.h), Math.cos(b.h - a.h));
+    const near = route.project(p.x, p.z, d);
+    const wrong =
+      r.countdown <= 0 &&
+      (near.dist > 14 ||
+        (p.speed > 1 && Math.cos(p.heading - route.sample(near.s).h) < -0.35));
+    $("wrong-way").hidden = !wrong;
     junction.textContent =
-      Math.abs(turn) > 0.35 ? (turn > 0 ? "↰ Влево" : "↱ Вправо") : "";
+      Math.abs(turn) > 0.35 ? (turn > 0 ? "↰ Влево" : "↱ Вправо") : "↑ Прямо";
   }
   $("tip").textContent =
     r.countdown > 0
@@ -460,8 +466,17 @@ function frame(now) {
       r.player.speed > 2
     ) {
       lastStep = r.time;
+      audio.effect(
+        r.player.surface === "grass"
+          ? "leaves"
+          : r.player.surface === "dry"
+            ? "gravel"
+            : "mud",
+        0.85 + Math.random() * 0.32,
+      );
       audio.effect("walking", Math.min(1.85, 0.8 + r.player.speed * 0.034));
     }
+    audio.ambience(r.player.speed);
     audio.setBoost(r.player.boosting);
     if (r.feedback === "Идеально" && r.tipUntil !== r.playedTip) {
       r.playedTip = r.tipUntil;
@@ -484,7 +499,9 @@ function frame(now) {
       s.settings,
     );
 }
-const portrait = matchMedia("(orientation: portrait) and (pointer: coarse) and (max-width: 700px)");
+const portrait = matchMedia(
+  "(orientation: portrait) and (pointer: coarse) and (max-width: 700px)",
+);
 function updateOrientation() {
   const dialog = $("rotate");
   const player = $("cinema").querySelector("video");
@@ -495,11 +512,12 @@ function updateOrientation() {
     if (video) player.pause();
   } else {
     dialog.close();
-    if (video && player.paused) $("cinema").querySelector("[data-play]").click();
+    if (video && player.paused)
+      $("cinema").querySelector("[data-play]").click();
   }
   engine.stamp = performance.now();
 }
-$("rotate").oncancel = e => e.preventDefault();
+$("rotate").oncancel = (e) => e.preventDefault();
 portrait.addEventListener("change", updateOrientation);
 updateOrientation();
 document.addEventListener("visibilitychange", () => {

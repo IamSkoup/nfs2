@@ -108,3 +108,22 @@ test("Звук адреналина прекращается при отпуск
   audio.mode("menu");
   assert.equal(hiss.paused, true);
 });
+
+test("Пауза останавливает музыку, ветер и шаги и сохраняет позицию трека", () => {
+  globalThis.Audio = Sound;
+  const audio = new AudioManager(fresh().settings);
+  assert.equal(audio.s.music, 0.25);
+  audio.unlock();
+  audio.mode("race");
+  audio.ambience(15);
+  audio.effect("gravel");
+  const track = audio.current;
+  track.currentTime = 18;
+  audio.setPaused(true);
+  audio.unlock();
+  for (const sound of [track, audio.wind, audio.fx.get("gravel")]) assert.ok(sound.paused);
+  audio.setPaused(false);
+  assert.equal(audio.current, track);
+  assert.equal(track.currentTime, 18);
+  assert.equal(track.paused, false);
+});

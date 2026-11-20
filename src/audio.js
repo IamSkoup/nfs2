@@ -10,11 +10,14 @@ export class AudioManager {
   }
   unlock() {
     this.enabled = true;
+    if (this.paused) return;
     if (this.kind && !this.current) this.next();
     else this.current?.play().catch(() => {});
   }
   mode(kind, fresh = false) {
     if (this.kind === kind && !fresh) return;
+    this.paused = false;
+    this.wind?.pause();
     this.setBoost(false);
     this.kind = kind;
     this.current = null;
@@ -29,7 +32,7 @@ export class AudioManager {
   }
   next() {
     const kind = this.kind;
-    if (!kind) return;
+    if (!kind || this.paused) return;
     const count = kind === "menu" ? 4 : 9;
     let all = Array.from({ length: count }, (_, i) => i + 1).filter(
       (i) => !this.missing.has(kind + i),
@@ -54,7 +57,28 @@ export class AudioManager {
     a.src = "assets/music/" + kind + i + ".mp3";
     a.play().catch(() => {});
   }
+  setPaused(paused) {
+    this.paused = paused;
+    if (paused) {
+      this.setBoost(false);
+      for (const a of [...this.players, ...this.fx.values()]) a.pause();
+      this.wind?.pause();
+    } else if (this.enabled) {
+      if (this.current) this.current.play().catch(() => {});
+      else this.next();
+    }
+  }
+  ambience(speed) {
+    if (!this.enabled || this.paused || this.kind !== "race") return;
+    if (!this.wind) {
+      this.wind = new Audio("assets/sfx/wind.wav");
+      this.wind.loop = true;
+    }
+    this.wind.volume = this.s.sfx * (0.21 + Math.min(0.45, speed / 70));
+    if (this.wind.paused && this.wind.volume) this.wind.play().catch(() => {});
+  }
   update(dt) {
+    if (this.paused) return;
     this.players = this.players.filter((a) => {
       let target = a === this.current ? this.s.music : 0;
       a.volume +=
@@ -70,10 +94,14 @@ export class AudioManager {
     });
   }
   effect(name, rate = 1) {
-    if (!this.enabled || !this.s.sfx || !this.kind) return;
+    if (this.paused || !this.enabled || !this.s.sfx || !this.kind) return;
     let a = this.fx.get(name);
     if (!a) {
-      a = new Audio("assets/sfx/" + name + ".ogg");
+      a = new Audio(
+        "assets/sfx/" +
+          name +
+          (["leaves", "gravel", "mud"].includes(name) ? ".wav" : ".ogg"),
+      );
       this.fx.set(name, a);
     }
     a.volume = this.s.sfx * 0.5;
@@ -82,7 +110,9 @@ export class AudioManager {
     a.play().catch(() => {});
   }
   setBoost(active) {
-    const playing = Boolean(active && this.enabled && this.kind === "race" && this.s.sfx);
+    const playing = Boolean(
+      active && this.enabled && this.kind === "race" && this.s.sfx,
+    );
     if (playing === Boolean(this.boostActive)) return;
     this.boostActive = playing;
     if (playing) {

@@ -48,19 +48,29 @@ export function drive(r, race, bend) {
   }
   if (!drag && Math.abs(r.offset) > 5) goal = 0;
   const target = event.route.sample(
-      Math.min(
-        event.route.length - 0.02,
-        (r.s % event.route.length) + 6 + r.speed * 0.55,
-      ),
-      goal,
+    Math.min(
+      event.route.length - 0.02,
+      (r.s % event.route.length) + 6 + r.speed * 0.55,
     ),
-    aim = Math.atan2(target.x - r.x, target.z - r.z),
+    goal,
+  );
+  const beyond =
+    (r.s % event.route.length) + 6 + r.speed * 0.55 - event.route.length;
+  if (beyond > 0) {
+    if (r.lap + 1 < event.laps)
+      Object.assign(target, event.route.sample(beyond, goal));
+    else {
+      target.x += Math.sin(target.h) * beyond;
+      target.z += Math.cos(target.h) * beyond;
+    }
+  }
+  const aim = Math.atan2(target.x - r.x, target.z - r.z),
     yaw = Math.atan2(Math.sin(r.heading - aim), Math.cos(r.heading - aim));
   const error =
     Math.sin(r.id * 8.42 + time * 0.71) * (0.18 - 0.095 * event.level);
   return {
-    gas: drag || Math.abs(yaw) < 0.58 || r.speed < 6,
-    brake: !drag && Math.abs(yaw) > 0.58 && r.speed > 6,
+    gas: drag || Math.abs(yaw) < 0.73 || r.speed < 6,
+    brake: !drag && Math.abs(yaw) > 0.73 && r.speed > 6,
     steer: clamp(yaw * 1.9, -1, 1),
     lane,
     breath: drag && r.rev > 0.82 + error,
@@ -69,6 +79,6 @@ export function drive(r, race, bend) {
       r.s > 24 &&
       !ahead &&
       (r.boosting ? r.boost > 8 : r.boost > 38) &&
-      Math.sin(time * 0.32 + r.id) > 0.05,
+      Math.sin(time * 0.32 + r.id) > -0.32,
   };
 }
