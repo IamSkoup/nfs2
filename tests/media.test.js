@@ -139,6 +139,7 @@ test("Целый цикл плейлиста и переход в следующ
       const tracks = new Set();
       for (let i = 0; i < size; i++) {
         const track = a.current.src;
+        assert.equal(track, "assets/music/" + kind + (i + 1) + ".mp3");
         assert.notEqual(track, previous);
         tracks.add(track);
         previous = track;

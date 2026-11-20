@@ -110,7 +110,7 @@ export const events = rows.map(
     bots,
     prize,
     desc,
-    route: makeRoute(code),
+    route: makeRoute(code, id === 5 ? 155 : 0),
     level: [0.89, 0.96, 1.05, 1.08, 1.10, 1.15, 1.19, 1.24, 1.30, 1.36, 1.27][id],
     weather: [
       "Ясно",

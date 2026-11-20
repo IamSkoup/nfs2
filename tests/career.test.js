@@ -115,3 +115,23 @@ test("В обеих драг-гонках сигнал указывает на �
     assert.equal(race.player.phase, 5);
   }
 });
+
+test("Северный отсев засчитывает круг на прямой по всей ширине дороги", () => {
+  const event = events[5];
+  const route = event.route;
+  assert.ok(Math.abs(route.sample(12).h - route.sample(route.length - 12).h) < 0.04);
+  for (const offset of [-6, 0, 6]) {
+    const race = new Race(event, fresh());
+    race.countdown = 0;
+    const distance = route.length - 9;
+    const pos = route.sample(distance, offset);
+    Object.assign(race.player, pos, {
+      s: distance, heading: pos.h, speed: 18, offset,
+      lastObstacle: race.obstacles.findIndex(o => o.s > distance) - 1,
+    });
+    for (let frame = 0; frame < 100; frame++)
+      race.tick(1 / 60, {gas:true, steer:0});
+    assert.equal(race.player.lap, 1);
+    assert.ok(race.player.s > route.length + 10);
+  }
+});

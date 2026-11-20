@@ -87,12 +87,20 @@ function smooth(list) {
 }
 for (const [key, mid] of Object.entries(defs))
   edges[key] = smooth([nodes[key[0]], ...mid, nodes[key[1]]]);
-export function makeRoute(code) {
+export function makeRoute(code, startDistance = 0) {
   let pts = [];
   for (let i = 1; i < code.length; i++) {
     const k = code.slice(i - 1, i + 1);
     const p = edges[k] || [...edges[k[1] + k[0]]].reverse();
     pts.push(...(i === 1 ? p : p.slice(1)));
+  }
+  if (startDistance > 0 && code[0] === code.at(-1)) {
+    let distance = 0, start = 0;
+    while (start < pts.length - 2 && distance < startDistance) {
+      distance += Math.hypot(pts[start+1][0]-pts[start][0], pts[start+1][1]-pts[start][1]);
+      start++;
+    }
+    pts = [...pts.slice(start, -1), ...pts.slice(0, start + 1)];
   }
   const ds = [0];
   for (let i = 1; i < pts.length; i++)

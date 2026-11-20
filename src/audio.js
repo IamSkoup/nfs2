@@ -6,7 +6,6 @@ export class AudioManager {
     this.missing = new Set();
     this.players = [];
     this.last = {};
-    this.played = { menu: new Set(), race: new Set() };
     this.fx = new Map();
   }
   unlock() {
@@ -39,17 +38,8 @@ export class AudioManager {
       (i) => !this.missing.has(kind + i),
     );
     if (!available.length) return;
-    const played = this.played[kind];
-    let choices = available.filter((i) => !played.has(i));
-    if (!choices.length) {
-      played.clear();
-      choices = available.filter((i) => i !== this.last[kind]);
-      if (!choices.length) choices = available;
-    }
-    const i = choices[Math.floor(Math.random() * choices.length)];
+    const i = available.find(n => n > (this.last[kind] || 0)) ?? available[0];
     const a = new Audio();
-    const previous = this.last[kind];
-    played.add(i);
     this.last[kind] = i;
     this.players.push(a);
     this.current = a;
@@ -60,7 +50,6 @@ export class AudioManager {
     a.onerror = () => {
       if (a !== this.current) return;
       this.missing.add(kind + i);
-      this.last[kind] = previous;
       this.current = null;
       this.next();
     };
