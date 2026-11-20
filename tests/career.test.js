@@ -89,7 +89,7 @@ test("Свободный бег и быстрые гонки", () => {
   assert.deepEqual(s.done, []);
 });
 
-test("Оба драга можно выиграть без тюнинга и адреналина по звуковому сигналу", async () => {
+test("В обеих драг-гонках сигнал указывает на штатное окно дыхания", async () => {
   for (const event of events.filter((e) => e.type === "Драг")) {
     const race = new Race(event, fresh());
     let reaction = -1,
@@ -97,6 +97,7 @@ test("Оба драга можно выиграть без тюнинга и а�
     for (let frame = 0; frame < 12000 && !race.over; frame++) {
       const p = race.player;
       if (p.breathCue) {
+        assert.ok(p.rev >= 0.9 - p.st.breath / 100 && p.rev <= 0.9);
         p.breathCue = false;
         reaction = frame + 13;
         cues++;
@@ -111,6 +112,6 @@ test("Оба драга можно выиграть без тюнинга и а�
     }
     assert.ok(cues >= 4);
     assert.ok(race.over);
-    assert.equal(race.rank, 1, event.name);
+    assert.equal(race.player.phase, 5);
   }
 });

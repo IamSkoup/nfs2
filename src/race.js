@@ -42,14 +42,8 @@ export class Race {
       (_, id) => {
         const st = stats(id ? { upgrades: {} } : save);
         if (id) {
-          const pace =
-            event.type === "Драг"
-              ? event.id === 3
-                ? 0.76
-                : 0.88
-              : event.level;
-          st.speed *= pace * (1 + 0.017 * id);
-          st.accel *= pace + 0.08 * id;
+          st.speed *= event.level * (1 + 0.017 * id);
+          st.accel *= event.level + 0.08 * id;
           st.turn += 0.1 * id;
           st.grip *= 1 + 0.15 * event.level;
         }

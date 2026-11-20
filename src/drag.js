@@ -1,16 +1,16 @@
 import { clamp } from "./map.js";
-export const idealWindow = (r) => 0.9 - r.st.breath / 100 - 0.075;
+export const idealWindow = (r) => 0.9 - r.st.breath / 100;
 export function breathe(r) {
   if (r.cool > 0) return "";
   let perfect = r.rev >= idealWindow(r) && r.rev <= 0.9,
     good = !perfect && r.rev >= 0.59 && r.rev < 0.9;
-  r.cool = 0.35;
+  r.cool = 0.45;
   r.cued = false;
   r.pulse = perfect ? 1.55 : good ? 1.16 : 0.62;
   if (perfect || good) {
     r.phase = Math.min(5, r.phase + 1);
     r.fatigue = Math.max(0, r.fatigue - (perfect ? 0.64 : 0.38));
-  } else r.speed *= 0.9;
+  } else r.speed *= 0.84;
   r.rev = 0.12;
   return perfect ? "Идеально" : good ? "Хорошо" : "Потеря темпа";
 }
@@ -36,9 +36,5 @@ export function dragStep(r, c, dt) {
   if (c.breath) r.feedback = breathe(r);
   if (c.lane) r.lane = clamp(r.lane + c.lane, -1, 1);
   r.offset += (r.lane * 3.85 - r.offset) * (1 - Math.exp(-dt * r.st.grip));
-  return (
-    (0.43 + 0.117 * r.phase) *
-    (1 - 0.28 * r.fatigue) *
-    (r.pulse === 1.55 ? 1.045 : 1)
-  );
+  return (0.43 + 0.117 * r.phase) * (1 - 0.32 * r.fatigue);
 }
