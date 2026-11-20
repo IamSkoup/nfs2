@@ -17,7 +17,7 @@ import {
 const engine = new Engine();
 import { buy } from "./tuning.js";
 import { AudioManager } from "./audio.js";
-import { cinema } from "./video.js";
+import { cinema, opening } from "./video.js";
 import { Input } from "./input.js";
 import { dots } from "./cartography.js";
 import * as ui from "./ui.js";
@@ -578,7 +578,7 @@ try {
   world.update(0.1, null, "home", s.settings);
   if (hasIntro) {
     video = true;
-    await new Promise((resolve) => cinema(0, s, resolve));
+    await new Promise((resolve) => opening(s.settings, resolve));
     video = false;
   }
   menu("home");

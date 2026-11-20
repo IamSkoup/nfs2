@@ -149,3 +149,26 @@ test("Целый цикл плейлиста и переход в следующ
     }
   }
 });
+
+test("Сбой заставки и преждевременный ended не открывают меню", async () => {
+  const { opening } = await import("../src/video.js");
+  const play = {}, skip = {}, v = Object.assign(new Sound(), {
+    currentTime: 5, duration: 60, load() {}, removeAttribute() {}
+  });
+  const layer = {querySelector: q => q === "video" ? v : q === "[data-play]" ? play : skip};
+  globalThis.document = {querySelector:q=>q==="#cinema"?layer:{open:false}};
+  const original = globalThis.fetch;
+  globalThis.fetch = async()=>new Response(new Blob(["test"]));
+  try {
+    let done=0;
+    opening(fresh().settings,()=>done++);
+    await new Promise(resolve=>setTimeout(resolve,10));
+    v.onerror(); v.onended();
+    assert.equal(done,0);
+    assert.equal(play.hidden,false);
+    await play.onclick();
+    assert.equal(done,0);
+    v.currentTime=v.duration; v.onended();
+    assert.equal(done,1);
+  } finally {globalThis.fetch=original}
+});

@@ -45,7 +45,7 @@ export async function prepareAssets(report) {
   } catch {}
   const cachedURLs = new Set((await cache?.keys().catch(() => []) || []).map(request => request.url));
   let completed = 0,
-    hasIntro = false;
+    hasIntro = true;
   async function download(path) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 180000);
@@ -61,6 +61,7 @@ export async function prepareAssets(report) {
         cache: "no-cache",
         signal: controller.signal,
       });
+      if (path === "assets/cutscenes/video.mp4" && [404,410].includes(response.status)) hasIntro = false;
       if (response.status !== 200) return;
       if (path === "assets/cutscenes/video.mp4") hasIntro = true;
       if (cache) await cache.put(url, response);

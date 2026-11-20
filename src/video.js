@@ -38,3 +38,70 @@ export function cinema(id, s, done) {
   play.onclick = start;
   if (!document.querySelector("#rotate").open) start();
 }
+
+export function opening(settings, done) {
+  const layer = document.querySelector("#cinema");
+  const video = layer.querySelector("video");
+  const play = layer.querySelector("[data-play]");
+  const skip = layer.querySelector("[data-skip]");
+  const path = "assets/cutscenes/video.mp4";
+  let blobURL, closed = false, position = 0, retry = false, loading = false;
+  const controller = new AbortController();
+  layer.hidden = false;
+  play.hidden = true;
+  video.volume = settings.video;
+  function finish() {
+    if (closed) return;
+    closed = true;
+    controller.abort();
+    video.onerror = video.onended = video.ontimeupdate = video.onplaying = null;
+    play.onclick = skip.onclick = null;
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    if (blobURL) URL.revokeObjectURL(blobURL);
+    play.textContent = "Воспроизвести";
+    layer.hidden = true;
+    done();
+  }
+  function showButton(failed) {
+    if (closed) return;
+    retry = failed;
+    play.textContent = failed ? "Повторить загрузку" : "Воспроизвести";
+    play.hidden = false;
+  }
+  async function start() {
+    if (closed || loading) return;
+    loading = true;
+    play.hidden = true;
+    try {
+      if (!blobURL || retry) {
+        const saved = !retry && await globalThis.caches?.match(path,{cacheName:"fuli2-media-v1"}).catch(()=>null);
+        const response = saved || await fetch(path,{headers:{"X-Fuli-Preload":"1"},cache:"reload",signal:controller.signal});
+        if (response.status===404 || response.status===410) return finish();
+        if (!response.ok) throw Error();
+        const blob = await response.blob();
+        if (closed) return;
+        if (!blob.size) throw Error();
+        if (blobURL) URL.revokeObjectURL(blobURL);
+        blobURL = URL.createObjectURL(blob);
+        video.src = blobURL;
+        if (position) video.currentTime = position;
+        retry = false;
+      }
+      if (!document.querySelector("#rotate").open) await video.play();
+    } catch (e) {
+      showButton(e.name !== "NotAllowedError" && e.name !== "AbortError");
+    } finally { loading = false; }
+  }
+  play.onclick = start;
+  skip.onclick = finish;
+  video.ontimeupdate = () => {position = Math.max(position, video.currentTime)};
+  video.onerror = () => showButton(true);
+  video.onplaying = () => {play.hidden = true};
+  video.onended = () => {
+    if (Number.isFinite(video.duration) && video.currentTime >= video.duration - 0.25) finish();
+    else showButton(true);
+  };
+  start();
+}
