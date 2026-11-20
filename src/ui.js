@@ -109,8 +109,8 @@ export function tuning(s) {
 }
 export function statsPage(s, final = false) {
   return panel(
-    final ? "Карьера завершена" : "Статистика",
-    `<article class="single">${metrics([["Основные гонки", s.done.length + " / 10"], ["Победы", final ? s.careerWins + " / " + s.careerRaces : s.wins + " / " + s.races], ["Заработано", num(s.earned) + " ₵"], [final ? "Время прохождения" : "Время в гонках", time(final ? s.careerTime : s.seconds)], ["Дистанция", km(s.distance)], ["Максимальная скорость", num(s.peak) + " км/ч"], ["Обгоны", s.passes], ["Кайон", ["won", "closed"].includes(s.offer) ? "Побеждён" : "—"], ...Object.entries(s.records).map(([id, t]) => [events[id].name, time(t)])])}<div class="actions"><button class="primary" data-go="free">Свободный бег</button><button class="secondary" data-go="clips">Кат-сцены</button></div></article>`,
+    final ? "Карьера завершена!" : "Статистика",
+    `<article class="single">${final ? "<p>Поздравляем! Вы завершили карьеру! Теперь вам доступны весь тюнинг и все улучшения на Фули! Вы по прежнему можете играть в быстрые заезды. Для того, чтобы начать карьеру заново, зайдите в игру в другом браузере или очистите данные этого сайта</p>" : ""}${metrics([["Основные гонки", s.done.length + " / 10"], ["Победы", final ? s.careerWins + " / " + s.careerRaces : s.wins + " / " + s.races], ["Заработано", num(s.earned) + " ₵"], [final ? "Время прохождения" : "Время в гонках", time(final ? s.careerTime : s.seconds)], ["Дистанция", km(s.distance)], ["Максимальная скорость", num(s.peak) + " км/ч"], ["Обгоны", s.passes], ["Кайон", ["won", "closed"].includes(s.offer) ? "Побеждён" : "—"], ...Object.entries(s.records).map(([id, t]) => [events[id].name, time(t)])])}<div class="actions">${final ? '<button class="primary" data-go="home">Продолжить</button>' : '<button class="primary" data-go="free">Свободный бег</button><button class="secondary" data-go="clips">Кат-сцены</button>'}</div></article>`,
   );
 }
 export function movies(s) {

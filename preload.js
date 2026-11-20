@@ -43,6 +43,7 @@ export async function prepareAssets(report) {
   try {
     cache = await caches.open(cacheName);
   } catch {}
+  const cachedURLs = new Set((await cache?.keys().catch(() => []) || []).map(request => request.url));
   let completed = 0,
     hasIntro = false;
   async function download(path) {
@@ -50,15 +51,11 @@ export async function prepareAssets(report) {
     const timer = setTimeout(() => controller.abort(), 180000);
     try {
       const url = new URL(path, document.baseURI);
-      const saved = await cache?.match(url);
-      const headers = {};
-      if (saved?.headers.get("etag"))
-        headers["If-None-Match"] = saved.headers.get("etag");
-      else if (saved?.headers.get("last-modified"))
-        headers["If-Modified-Since"] = saved.headers.get("last-modified");
-      if (path === "video.mp4" && saved) hasIntro = true;
-      if (saved && !Object.keys(headers).length) return;
-      headers["X-Fuli-Preload"] = "1";
+      if (cachedURLs.has(url.href)) {
+        if (path === "video.mp4") hasIntro = true;
+        return;
+      }
+      const headers = {"X-Fuli-Preload":"1"};
       const response = await fetch(url, {
         headers,
         cache: "no-cache",
