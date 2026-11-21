@@ -9,27 +9,48 @@ export const upgrades = [
   ["launch", "Стартовое ускорение", 3, 1, "м/с"],
   ["breath", "Окно дыхания", 12, 2, "%"],
 ];
-export const stats = (s) =>
-  Object.fromEntries(
-    upgrades.map(([k, , base, step]) => [
-      k,
-      base + step * (s.upgrades[k] || 0),
-    ]),
-  );
+export const tiers = ["Заводской", "Уличный", "Профессиональный", "Экстремальный"];
+export const maxTier = tiers.length - 1;
+// The top package retains the performance of the previous four-upgrade maximum.
+const performanceSteps = [0, 1, 2, 4];
+const prices = [0, 340, 700, 2000];
+export const installedTier = (s, k) => s.installed?.[k] ?? s.upgrades[k] ?? 0;
+export const tierValue = (base, step, tier) => base + step * performanceSteps[tier];
+
+export const stats = (s) => Object.fromEntries(
+  upgrades.map(([k, , base, step]) => [k, tierValue(base, step, installedTier(s, k))]),
+);
+
 export function offer(s, k) {
   const level = s.upgrades[k] || 0;
   return {
     level,
-    price: Math.round(340 * (level + 1) ** 1.35),
+    price: prices[level + 1] ?? 0,
     requirement: level * 2,
   };
 }
+
+export function equip(s, k, tier) {
+  if (!upgrades.some(([key]) => key === k) || !Number.isInteger(tier) ||
+      tier < 0 || tier > (s.upgrades[k] || 0)) return false;
+  s.installed[k] = tier;
+  return true;
+}
+
 export function buy(s, k) {
-  if (!upgrades.some((v) => v[0] === k)) return false;
+  if (!upgrades.some(([key]) => key === k)) return false;
   const { level, price, requirement } = offer(s, k);
-  if (level >= 4 || s.money < price || s.done.length < requirement)
-    return false;
+  if (level >= maxTier || s.money < price || s.done.length < requirement) return false;
   s.money -= price;
   s.upgrades[k] = level + 1;
+  s.installed[k] = level + 1;
   return true;
+}
+
+export function unlockWorkshop(s) {
+  for (const [key] of upgrades) {
+    s.installed[key] = installedTier(s, key);
+    s.upgrades[key] = maxTier;
+  }
+  s.cosmetics = [0, 1, 2];
 }

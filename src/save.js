@@ -1,3 +1,4 @@
+import { maxTier, unlockWorkshop, upgrades } from "./tuning.js";
 import { bindings } from "./config.js";
 export const KEY = "need-for-speed-fuli-2.v2";
 export const fresh = () => ({
@@ -9,6 +10,7 @@ export const fresh = () => ({
   earned: 0,
   done: [],
   upgrades: {},
+  installed: {},
   records: {},
   scenes: [],
   seen: [],
@@ -70,18 +72,25 @@ export function restore(raw) {
   s.scenes = ids(s.scenes, 1, 8);
   s.seen = ids(s.seen, 1, 8);
   s.cosmetics = [...new Set([0, ...ids(s.cosmetics, 0, 2)])];
-  if (!s.cosmetics.includes(s.look)) s.look = 0;
   if (
     !["new", "offered", "accepted", "declined", "won", "closed"].includes(
       s.offer,
     )
   )
     s.offer = "new";
-  s.upgrades = Object.fromEntries(
-    Object.entries(s.upgrades || {}).filter(
-      ([, v]) => Number.isInteger(v) && v >= 0 && v <= 4,
-    ),
-  );
+  s.upgrades = {};
+  s.installed = {};
+  for (const [key] of upgrades) {
+    const owned = raw.upgrades?.[key];
+    if (Number.isInteger(owned) && owned >= 0 && owned <= 4)
+      s.upgrades[key] = Math.min(owned, maxTier);
+    const selected = raw.installed?.[key];
+    if (Number.isInteger(selected) && selected >= 0 && selected <= (s.upgrades[key] || 0))
+      s.installed[key] = selected;
+  }
+  s.ending = raw.ending === true || s.done.includes(9);
+  if (s.ending) unlockWorkshop(s);
+  if (!s.cosmetics.includes(s.look)) s.look = 0;
   s.records = Object.fromEntries(
     Object.entries(s.records || {}).filter(
       ([k, v]) => /^([0-9]|10)$/.test(k) && Number.isFinite(v) && v > 0,

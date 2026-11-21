@@ -1,3 +1,5 @@
+import { unlockWorkshop } from "./tuning.js";
+
 export function settle(s, r, career) {
   if (r.paid) return 0;
   r.paid = true;
@@ -25,7 +27,10 @@ export function settle(s, r, career) {
       const repeat = s.done.includes(e.id);
       money = repeat ? Math.floor(e.prize * 0.35) : e.prize;
       if (!repeat) s.done.push(e.id);
-      if (e.id === 9) s.ending = true;
+      if (e.id === 9 && !s.ending) {
+        s.ending = true;
+        unlockWorkshop(s);
+      }
     }
   }
   if (r.player.s >= r.total && (!s.records[e.id] || r.time < s.records[e.id]))

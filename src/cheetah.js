@@ -33,7 +33,7 @@ function sculpt(position, name, type) {
       const nose = Math.exp(-((y-1.98)**2)/.0032);
       const muzzle = Math.exp(-((y-1.91)**2)/.007);
       const forward = clamp((z-1.17)*4,0,1);
-      z += forward * (center * (.035 + .092*nose) + .054*muzzle);
+      z += forward * (center * (.024 + .057*nose) + .037*muzzle);
     }
     const torso = clamp((y-.82)*2.5,0,1) * clamp((.75-z)*4,0,1)
       * clamp((z+1.25)*5,0,1);

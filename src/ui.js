@@ -1,5 +1,5 @@
 import { events, clips, labels } from "./config.js";
-import { stats, upgrades, offer } from "./tuning.js";
+import { installedTier, maxTier, offer, tiers, tierValue, upgrades } from "./tuning.js";
 import { chart } from "./cartography.js";
 import { icon } from "./icons.js";
 export const num = (n) => Math.round(n).toLocaleString("ru-RU"),
@@ -95,12 +95,17 @@ export function tuning(s) {
   return panel(
     "Тюнинг",
     `<div class="workshop"><div class="upgrades">${upgrades
-      .map(([k, name, b, step, unit]) => {
-        let o = offer(s, k),
-          val = stats(s)[k],
-          max = o.level === 4,
-          locked = s.done.length < o.requirement;
-        return `<div class="upgrade"><div><b>${name}</b><small>${Number(val.toFixed(2))}${max ? "" : " → " + Number((val + step).toFixed(2))} ${unit} · ${o.level}/4</small></div><button data-buy="${k}" ${max || locked || s.money < o.price ? "disabled" : ""}>${max ? "Максимум" : locked ? "После гонки " + o.requirement : num(o.price) + " ₵"}</button></div>`;
+      .map(([k, name, base, step, unit]) => {
+        const { level, price, requirement } = offer(s, k);
+        const selected = installedTier(s, k);
+        const options = tiers.map((tier, i) => {
+          const value = Number(tierValue(base, step, i).toFixed(2)).toLocaleString("ru-RU");
+          return `<option value="${i}" ${i === selected ? "selected" : ""} ${i > level ? "disabled" : ""}>${tier} · ${value} ${unit}</option>`;
+        }).join("");
+        const locked = s.done.length < requirement;
+        const purchase = level < maxTier
+          ? `<button data-buy="${k}" ${locked || s.money < price ? "disabled" : ""}>${tiers[level + 1]}<small>${locked ? "После гонки " + requirement : num(price) + " ₵"}</small></button>` : "";
+        return `<div class="upgrade"><div><b>${name}</b><select data-tier="${k}" aria-label="${name} · установленный уровень">${options}</select></div>${purchase}</div>`;
       })
       .join(
         "",
@@ -110,7 +115,7 @@ export function tuning(s) {
 export function statsPage(s, final = false) {
   return panel(
     final ? "Карьера завершена!" : "Статистика",
-    `<article class="single">${final ? "<p>Поздравляем! Вы завершили карьеру! Теперь вам доступны весь тюнинг и все улучшения на Фули! Вы по прежнему можете играть в быстрые заезды. Для того, чтобы начать карьеру заново, зайдите в игру в другом браузере или очистите данные этого сайта</p>" : ""}${metrics([["Основные гонки", s.done.length + " / 10"], ["Победы", final ? s.careerWins + " / " + s.careerRaces : s.wins + " / " + s.races], ["Заработано", num(s.earned) + " ₵"], [final ? "Время прохождения" : "Время в гонках", time(final ? s.careerTime : s.seconds)], ["Дистанция", km(s.distance)], ["Максимальная скорость", num(s.peak) + " км/ч"], ["Обгоны", s.passes], ["Кайон", ["won", "closed"].includes(s.offer) ? "Побеждён" : "—"], ...Object.entries(s.records).map(([id, t]) => [events[id].name, time(t)])])}<div class="actions">${final ? '<button class="primary" data-go="home">Продолжить</button>' : '<button class="primary" data-go="free">Свободный бег</button><button class="secondary" data-go="clips">Кат-сцены</button>'}</div></article>`,
+    `<article class="single">${final ? "<p>Поздравляем! Вы завершили карьеру! Теперь можно бесплатно установить любой уровень тюнинга и выбрать любое оформление Фули. Вы по прежнему можете играть в быстрые заезды. Для того, чтобы начать карьеру заново, зайдите в игру в другом браузере или очистите данные этого сайта</p>" : ""}${metrics([["Основные гонки", s.done.length + " / 10"], ["Победы", final ? s.careerWins + " / " + s.careerRaces : s.wins + " / " + s.races], ["Заработано", num(s.earned) + " ₵"], [final ? "Время прохождения" : "Время в гонках", time(final ? s.careerTime : s.seconds)], ["Дистанция", km(s.distance)], ["Максимальная скорость", num(s.peak) + " км/ч"], ["Обгоны", s.passes], ["Кайон", ["won", "closed"].includes(s.offer) ? "Побеждён" : "—"], ...Object.entries(s.records).map(([id, t]) => [events[id].name, time(t)])])}<div class="actions">${final ? '<button class="primary" data-go="home">Продолжить</button>' : '<button class="primary" data-go="free">Свободный бег</button><button class="secondary" data-go="clips">Кат-сцены</button>'}</div></article>`,
   );
 }
 export function movies(s) {

@@ -563,6 +563,14 @@ select {
   color: #bdc3b8;
   margin-top: 3px;
 }
+.upgrade {
+  flex-wrap: wrap;
+}
+.upgrade select {
+  display: block;
+  max-width: 100%;
+  margin-top: 5px;
+}
 .upgrade button {
   padding: 6px 9px;
 }

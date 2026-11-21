@@ -14,7 +14,7 @@ import {
   decide,
 } from "./career.js";
 const engine = new Engine();
-import { buy } from "./tuning.js";
+import { buy, equip } from "./tuning.js";
 import { AudioManager } from "./audio.js";
 import { cinema, opening } from "./video.js";
 import { Input } from "./input.js";
@@ -291,7 +291,9 @@ document.addEventListener("click", (e) => {
   else if (d.buy && buy(s, d.buy)) {
     save();
     audio.effect("coin");
+    const scroll = $("ui").scrollTop;
     refresh();
+    $("ui").scrollTop = scroll;
   } else if (d.look != null) {
     let i = +d.look;
     if (!s.cosmetics.includes(i)) {
@@ -334,6 +336,11 @@ document.addEventListener(
   true,
 );
 document.addEventListener("change", (e) => {
+  const key = e.target.dataset.tier;
+  if (key) {
+    if (page === "tuning" && equip(s, key, Number(e.target.value))) save();
+    return;
+  }
   const k = e.target.dataset.setting;
   if (!k) return;
   const v = s.settings;
