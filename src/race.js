@@ -98,6 +98,17 @@ export class Race {
     );
     this.player = this.racers[0];
   }
+  get wrongWay() {
+    if (this.free || this.countdown > 0 || this.event.type === "Драг") return false;
+    const p = this.player;
+    const speed = Math.hypot(p.vx, p.vz);
+    if (speed <= 0.25) return false;
+    const route = this.event.route;
+    const near = route.project(p.x, p.z, p.s % route.length, p.detour ? 20 + p.detour : 0);
+    const h = route.sample(near.s).h;
+    const forwardSpeed = p.vx * Math.sin(h) + p.vz * Math.cos(h);
+    return forwardSpeed < -0.5 * speed;
+  }
   ranking() {
     return [...this.racers].sort(
       (a, b) =>

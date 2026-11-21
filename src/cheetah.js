@@ -1,4 +1,5 @@
 import * as T from "./vendor.js";
+import { faceMap } from "./faces.js";
 
 // Positions in this file are in the GLB's bind pose (+Z points towards the nose).
 const coats = {
@@ -17,26 +18,23 @@ function sculpt(position, name, type) {
     let x = position.getX(i), y = position.getY(i), z = position.getZ(i);
     const side = Math.sign(x);
     const head = clamp((y - 1.72) * 5, 0, 1) * clamp((z - .68) * 5, 0, 1);
-    if (/eye|iris|pupil/.test(name)) {
-      const dx = Math.abs(x) - .182;
-      y = 2.1 + (y - 2.1) * (azdat ? .67 : .83) *
-        (1 - .32 * Math.min(1, Math.abs(dx) / .14)) + dx * (azdat ? .36 : .26);
-    }
     if (name.includes("ear")) {
       const tip = clamp((y - 2.25) / .27, 0, 1);
       x = side * (.29 + (Math.abs(x) - .29) * (1 - .45 * tip) + tip * .075);
       y += tip * (fuli ? .07 : .035);
     }
-    if (name.includes("ivory_muzzle") || name.includes("whisker_dot")) {
-      const lift = .15 * Math.abs(x);
-      y = 1.915 + (y-1.915) * .73 + lift;
-      z -= .028;
+    if (name.includes("continuous_skin")) {
+      // Keep the animated neck seam and sculpt the brow, cheekbones and muzzle in bind space.
+      const face = clamp((z - .8) * 5, 0, 1) * clamp((y - 1.64) * 9, 0, 1);
+      const cheek = Math.exp(-((y - 2.025) ** 2) / .013);
+      const chin = clamp((1.95-y) / .23, 0, 1);
+      x *= 1 + face * ((fuli ? .13 : .09) + .065 * cheek - .34 * chin);
+      const center = Math.exp(-(x*x)/.014);
+      const nose = Math.exp(-((y-1.98)**2)/.0032);
+      const muzzle = Math.exp(-((y-1.91)**2)/.007);
+      const forward = clamp((z-1.17)*4,0,1);
+      z += forward * (center * (.035 + .092*nose) + .054*muzzle);
     }
-    if (name.includes("chin")) { y += .019; z -= .028; }
-    if (name.includes("nose")) {
-      x *= .64 + .5 * clamp((y - 1.94) / .09, 0, 1);
-    }
-    x *= 1 + head * (fuli ? .19 : azdat ? -.06 : .025);
     const torso = clamp((y-.82)*2.5,0,1) * clamp((.75-z)*4,0,1)
       * clamp((z+1.25)*5,0,1);
     const waist = Math.exp(-((z+.36)**2)/.11);
@@ -57,55 +55,6 @@ function sculpt(position, name, type) {
   }
 }
 
-const faceMaps = new Map();
-function faceMap(type) {
-  if (faceMaps.has(type)) return faceMaps.get(type);
-  const azdat=type==="azdat", fuli=type==="fuli";
-  const canvas=document.createElement("canvas");
-  canvas.width=768; canvas.height=512;
-  const c=canvas.getContext("2d");
-  c.scale(1.5,1);
-  function shape(path,color) { c.fillStyle=color; c.fill(new Path2D(path)); }
-  function oval(x,y,rx,ry,ink) {
-    c.beginPath(); c.ellipse(x,y,rx,ry,0,0,2*Math.PI); c.fillStyle=ink; c.fill();
-  }
-  for (const side of [-1,1]) {
-    c.save();
-    c.translate(256,0); c.scale(side,1);
-    shape("M 12 280 Q 20 210 48 180 Q 94 148 154 177 Q 136 252 93 277 Q 52 302 12 280Z","#fbe4a1");
-    const eye=new Path2D(azdat ?
-      "M 24 231 Q 74 206 145 189 Q 126 253 90 263 Q 55 272 24 231Z":
-      "M 22 244 Q 62 193 150 183 Q 128 246 88 263 Q 53 277 22 244Z");
-    c.fillStyle="#fff4cb"; c.fill(eye);
-    c.save(); c.clip(eye);
-    oval(67,236,31,38,azdat?"#a4c34f":"#447e35");
-    oval(61,239,13,27,"#1e2719");
-    oval(71,220,7,8,"#fffbe3"); c.restore();
-    c.strokeStyle="#291c1d"; c.lineWidth=4; c.stroke(eye);
-    shape(azdat?"M 20 226 Q 72 206 150 182 L 144 199 Q 87 213 24 236Z":
-      "M 15 250 Q 56 194 155 174 L 146 194 Q 75 199 25 247Z","#271918");
-    shape(azdat?"M 18 164 Q 51 171 89 148 Q 122 134 157 145 Q 99 149 56 185 Q 25 197 18 164Z":
-      "M 19 171 Q 87 111 147 150 Q 102 133 55 168 Q 33 189 19 182Z","#3a2020");
-    if(azdat)shape("M 112 255 Q 105 296 69 343 Q 86 296 89 263Z","#352626");
-    if(fuli) {
-      oval(136,297,20,18,"#4b1921");oval(144,345,31,23,"#4b1921");oval(145,347,13,11,"#f3bc29");
-      oval(90,327,12,10,"#4b1921");
-    }
-    c.restore();
-  }
-  if (fuli) {
-    shape("M 244 52 Q 204 37 209 70 Q 211 82 225 89 Q 234 100 220 109 Q 196 94 192 75 Q 187 47 204 37 Q 227 21 244 52Z","#511b20");
-    shape("M 249 107 Q 230 96 237 80 Q 250 63 240 47 Q 268 54 258 76 Q 248 89 255 97Z","#511b20");
-    oval(245,121,8,6,"#511b20"); oval(291,72,15,8,"#511b20");
-  } else {
-    for (const [x,y,r] of [[224,62,7],[266,73,6],[289,53,9],[243,97,5]])
-      oval(x,y,r,r*1.55,"#302728");
-  }
-  const tex=new T.CanvasTexture(canvas);
-  tex.colorSpace=T.SRGBColorSpace;
-  faceMaps.set(type,tex);
-  return tex;
-}
 function coatMaterial(type) {
   const [gold, ink, ivory] = coats[type].map(c => new T.Color(c));
   const mat = new T.MeshStandardMaterial({ roughness: .92 });
@@ -152,14 +101,49 @@ function coatMaterial(type) {
         if(p.z < -1.63) spot=max(rings,1.-step(-2.39,p.z));
         float faceAngle=atan(p.x,p.z-1.055);
         float front=1.-smoothstep(1.28,1.60,abs(faceAngle));
-        spot*=1.-front*head*(1.-smoothstep(2.25,2.35,p.y));
+        float faceMask = front * smoothstep(.87,1.04,p.z) * smoothstep(1.65,1.73,p.y);
+        spot *= 1.-faceMask;
         diffuseColor.rgb=mix(mix(furGold,furInk,spot),furIvory,cream);
-        vec2 portrait=vec2(.5+faceAngle/3.3,(p.y-1.69)/.81);
+        vec2 portrait=vec2(.5+faceAngle/3.6,(p.y-1.70)/.70);
         vec4 art=texture2D(faceArt,clamp(portrait,0.,1.));
-        diffuseColor.rgb=mix(diffuseColor.rgb,art.rgb,art.a*front*head);
+        diffuseColor.rgb=mix(diffuseColor.rgb,art.rgb,art.a*faceMask);
       `);
   };
   return mat;
+}
+
+// The imported skin splits some neighboring triangles at their shared positions.
+// Average their normals after sculpting so those seams do not show on the face.
+function smoothFace(geometry, original) {
+  const source = original.attributes.position;
+  const normal = original.attributes.normal.clone();
+  const indices = geometry.index;
+  const positions = geometry.attributes.position;
+  const keys = new Array(source.count);
+  const sums = new Map();
+  for (let i = 0; i < source.count; i++) {
+    if (source.getY(i) < 1.68 || source.getZ(i) < .87) continue;
+    const key = [source.getX(i), source.getY(i), source.getZ(i)]
+      .map(v => Math.round(v * 100000)).join(",");
+    keys[i] = key;
+    if (!sums.has(key)) sums.set(key, new T.Vector3());
+  }
+  const a = new T.Vector3(), b = new T.Vector3(), c = new T.Vector3();
+  for (let i = 0; i < indices.count; i += 3) {
+    const ia = indices.getX(i), ib = indices.getX(i+1), ic = indices.getX(i+2);
+    if (!keys[ia] && !keys[ib] && !keys[ic]) continue;
+    a.fromBufferAttribute(positions, ia);
+    b.fromBufferAttribute(positions, ib).sub(a);
+    c.fromBufferAttribute(positions, ic).sub(a);
+    b.cross(c);
+    for (const vertex of [ia, ib, ic]) sums.get(keys[vertex])?.add(b);
+  }
+  for (const v of sums.values()) v.normalize();
+  for (let i = 0; i < source.count; i++) {
+    const v = sums.get(keys[i]);
+    if (v?.lengthSq()) normal.setXYZ(i, v.x, v.y, v.z);
+  }
+  geometry.setAttribute("normal", normal);
 }
 
 function variant(original, name, type, lod) {
@@ -173,6 +157,7 @@ function variant(original, name, type, lod) {
   sculpt(pos, name, type);
   g.setAttribute("position", pos);
   g.setAttribute("coatPoint", original.attributes.position);
+  if (name.includes("continuous_skin")) smoothFace(g, original);
   if (lod.has(original)) {
     const low = new T.BufferGeometry();
     for (const [key,value] of Object.entries(g.attributes)) low.setAttribute(key,value);
@@ -232,20 +217,7 @@ export function dressModel(model,type,lod) {
       o.material=coatMaterial(type);
     } else {
       o.material=o.material.clone();
-      if (/eye|iris|pupil|tear_stripe/.test(name)) o.visible=false;
-      if(name.includes("ivory_muzzle")) {
-        o.material.onBeforeCompile = shader => {
-          shader.vertexShader = "varying vec3 muzzle;\n" + shader.vertexShader.replace(
-            "#include <begin_vertex>", "#include <begin_vertex>\nmuzzle=position;");
-          shader.fragmentShader = "varying vec3 muzzle;\n" + shader.fragmentShader.replace(
-            "#include <color_fragment>", `float cheek=abs(muzzle.x);
-              float smile=1.907+.84*(cheek-.08)*(cheek-.08);
-              float lip=(1.-smoothstep(.003,.008,abs(muzzle.y-smile)))*
-                smoothstep(1.425,1.48,muzzle.z)*(1.-smoothstep(.17,.20,cheek));
-              diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.085,.040,.028),lip);`);
-        };
-      }
-      if(name.includes("nose")) o.material.color.setHex(type==="fuli"?0x875044:0x453728);
+      if (/eye|iris|pupil|tear_stripe|ivory_muzzle|chin|nose|whisker_dot/.test(name)) o.visible=false;
       if(name.includes("ear_interior")) o.material.color.setHex(0xb78465);
 
       if(name.includes("rounded_ear")) {

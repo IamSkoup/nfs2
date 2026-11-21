@@ -1,6 +1,5 @@
 import { prepareAssets } from "../preload.js";
 import { World } from "./world.js";
-import { raceShoulder } from "./map.js";
 import { idealWindow } from "./drag.js";
 import { Race } from "./race.js";
 import { events } from "./config.js";
@@ -434,12 +433,7 @@ function updateHud() {
       a = route.sample(d + 4),
       b = route.sample(d + 28),
       turn = Math.atan2(Math.sin(b.h - a.h), Math.cos(b.h - a.h));
-    const near = route.project(p.x, p.z, d);
-    const wrong =
-      r.countdown <= 0 &&
-      (near.dist > raceShoulder + 6 ||
-        (p.speed > 1 && Math.cos(p.heading - route.sample(near.s).h) < -0.35));
-    $("wrong-way").hidden = !wrong;
+    $("wrong-way").hidden = !r.wrongWay;
     junction.textContent =
       Math.abs(turn) > 0.35 ? (turn > 0 ? "↰ Влево" : "↱ Вправо") : "↑ Прямо";
   }
