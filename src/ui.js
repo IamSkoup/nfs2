@@ -104,7 +104,7 @@ export function tuning(s) {
       })
       .join(
         "",
-      )}</div><article class="looks"><h2>Оформление</h2><p>Потяните модель, чтобы повернуть.</p>${["Без аксессуаров", "Янтарный браслет и пыль", "Стальной браслет и след"].map((v, i) => `<button class="secondary" data-look="${i}" ${s.look === i || (!s.cosmetics.includes(i) && s.money < 500 * i) ? "disabled" : ""}>${v} · ${s.look === i ? "Выбрано" : s.cosmetics.includes(i) ? "Надеть" : num(i * 500) + " ₵"}</button>`).join("")}</article></div>`,
+      )}</div><article class="looks"><h2>Оформление</h2><p>Потяните модель, чтобы повернуть.</p>${["Без аксессуаров", "Охристая косынка и пыль", "Лазурные обмотки лап и след"].map((v, i) => `<button class="secondary" data-look="${i}" ${s.look === i || (!s.cosmetics.includes(i) && s.money < 500 * i) ? "disabled" : ""}>${v} · ${s.look === i ? "Выбрано" : s.cosmetics.includes(i) ? "Надеть" : num(i * 500) + " ₵"}</button>`).join("")}</article></div>`,
   );
 }
 export function statsPage(s, final = false) {

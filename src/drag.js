@@ -33,7 +33,7 @@ export function dragStep(r, c, dt) {
     r.breathCue = true;
   }
   if (r.rev < idealWindow(r) - 0.04) r.cued = false;
-  if (c.breath) r.feedback = breathe(r);
+  if (c.breath && (r.id || r.fatigue < 1)) r.feedback = breathe(r);
   if (c.lane) r.lane = clamp(r.lane + c.lane, -1, 1);
   r.offset += (r.lane * 3.85 - r.offset) * (1 - Math.exp(-dt * r.st.grip));
   return (0.43 + 0.117 * r.phase) * (1 - 0.32 * r.fatigue);

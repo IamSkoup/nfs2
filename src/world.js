@@ -1,5 +1,6 @@
 import { courseFence } from "./course-fence.js";
 import * as T from "./vendor.js";
+import { ravine } from "./ravine.js";
 import { Actors } from "./actors.js";
 import { forest } from "./forest.js";
 import { terrain, clamp, edges } from "./map.js";
@@ -214,10 +215,12 @@ export class World extends Actors {
     this.items.clear();
     this.snap = true;
     this.viewOffset = 0;
+    this.environment.showRavine(!!r?.event.ravine && !r.free);
     const count = r?.racers.length || 1;
-    if (this.actorKey !== count + "-" + (r?.event.id === 10)) {
-      this.setActors(count, r?.event.id === 10 ? "kion" : "");
-      this.actorKey = count + "-" + (r?.event.id === 10);
+    const rival = r?.racers[1]?.name;
+    if (this.actorKey !== count + "-" + rival) {
+      this.setActors(count, rival);
+      this.actorKey = count + "-" + rival;
     }
     this.coat(look);
     this.cloud = [];
@@ -236,6 +239,15 @@ export class World extends Actors {
       this.items.add(m);
       return m;
     };
+    if (r.event.ravine) {
+      for (const d of [-18, -9, -1, ravine.width + 1]) {
+        for (const side of [-1, 1]) {
+          const p = r.event.route.sample(ravine.start + d, side * 8);
+          add(new T.BoxGeometry(.36, 1.9, .36), 0xc89530, p.x, terrain(p.x,p.z)+.95, p.z);
+          add(new T.BoxGeometry(.41, .36, .41), 0x352924, p.x, terrain(p.x,p.z)+1.42, p.z);
+        }
+      }
+    }
     for (const o of r.obstacles.filter((o) => o.s < r.event.route.length)) {
       const p = r.event.route.sample(o.s, o.off),
         y = terrain(p.x, p.z);
@@ -366,16 +378,7 @@ export class World extends Actors {
   coat(look) {
     const a = this.actors[0];
     if (!a) return;
-    if (!a.band) {
-      a.band = new T.Mesh(
-        new T.TorusGeometry(0.46, 0.055, 6, 30),
-        new T.MeshStandardMaterial({ color: 0xda912e }),
-      );
-      a.band.position.set(0, 1.05, 0.58);
-      a.root.add(a.band);
-    }
-    a.band.visible = look > 0;
-    a.band.material.color.setHex(look === 2 ? 0x7fc6e7 : 0xffab43);
+    a.garments.forEach((piece, i) => { piece.visible = look === i + 1; });
     this.trail.material.color.setHex(
       [0xe6b262, 0xff902e, 0x87d8ff][look] || 0xe6b262,
     );
@@ -429,7 +432,7 @@ export class World extends Actors {
       }
       a.root.visible = !p.out;
       let y = terrain(p.x, p.z);
-      a.root.position.set(p.x, y + 0.19, p.z);
+      a.root.position.set(p.x, y + 0.19 + (p.air || 0), p.z);
       a.root.rotation.y = r
         ? p.heading
         : -0.28 + this.orbit + 0.035 * Math.sin(t * 0.23);
@@ -513,7 +516,7 @@ export class World extends Actors {
     if (this.trail.visible) {
       this.trailHistory.unshift([
         P.x - Math.sin(P.heading),
-        terrain(P.x, P.z) + 0.47,
+        terrain(P.x, P.z) + (P.air || 0) + 0.47,
         P.z - Math.cos(P.heading),
         P.heading,
       ]);
@@ -543,7 +546,7 @@ export class World extends Actors {
     this.rain.visible = rain && s.particles > 0;
     this.rain.position.set(P.x, center.y - ((t * 12) % 10), P.z);
     this.rain.geometry.setDrawRange(0, 2 * Math.floor(180 * s.particles));
-    if (r && P.speed > 2 && s.particles && t > this.step) {
+    if (r && !P.flight && P.speed > 2 && s.particles && t > this.step) {
       this.step = t + 0.11;
       const sign = this.markIndex % 2 ? 1 : -1,
         x = P.x + Math.cos(P.heading) * 0.35 * sign,

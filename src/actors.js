@@ -1,4 +1,5 @@
 import * as T from "./vendor.js";
+import { dressModel } from "./cheetah.js";
 import { clone } from "./vendor.js";
 const mat = (color, roughness = 0.85, emissive = 0) =>
   new T.MeshStandardMaterial({
@@ -33,7 +34,7 @@ export class Actors {
       this.scene.remove(a.root);
       a.mixer?.stopAllAction();
       a.root.traverse((o) => {
-        if (a.wheels || o === a.band) {
+        if (a.wheels || o.userData.garment) {
           o.geometry?.dispose();
           o.material?.map?.dispose();
           o.material?.dispose();
@@ -43,7 +44,7 @@ export class Actors {
     }
     this.actors = [];
     for (let i = 0; i < n; i++) {
-      if (i === 1 && boss === "kion") {
+      if (i === 1 && boss === "Кайон") {
         this.actors.push(this.scooter());
         continue;
       }
@@ -51,19 +52,8 @@ export class Actors {
       const root = new T.Group();
       root.add(model);
       root.scale.setScalar(1.25);
-      model.traverse((o) => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
-          if (i) {
-            o.material = o.material.clone();
-            o.userData.ownMaterial = true;
-            o.material.color.multiply(
-              new T.Color([0xffffff, 0xbbcde4, 0xd6b890, 0xb6d9c3][i]),
-            );
-          }
-        }
-      });
+      const type = i === 1 && boss === "Аздат" ? "azdat" : ["fuli","tano","nuru","safira"][i];
+      const garments = dressModel(model, type, this.lod);
       this.scene.add(root);
       const mixer = new T.AnimationMixer(model),
         actions = {};
@@ -79,7 +69,7 @@ export class Actors {
       idle?.play();
       run?.play();
       if (run) run.weight = 0;
-      this.actors.push({ root, model, mixer, idle, run });
+      this.actors.push({ root, model, mixer, idle, run, garments });
     }
   }
   scooter() {

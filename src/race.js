@@ -3,6 +3,7 @@ import { raceShoulder, angle, clamp } from "./map.js";
 import { idealWindow } from "./drag.js";
 import { drive } from "./ai.js";
 import { move, roadDistance } from "./physics.js";
+import { ravine, crossRavine } from "./ravine.js";
 export class Race {
   constructor(event, save, free = false) {
     this.event = event;
@@ -25,6 +26,14 @@ export class Race {
         d < event.route.length - 22;
         d += event.type === "Драг" ? 53 : 90, i++
       ) {
+        const clearOfJump = s => !event.ravine || s < ravine.start - 36 || s > ravine.start + 32;
+        const extra = d - (event.type === "Драг" ? 25 : 43);
+        if (clearOfJump(extra)) this.obstacles.push({
+          s: extra + lap * event.route.length,
+          off: (i % 2 ? -1 : 1) * event.obstacleOffset,
+          kind: i % 2 ? "Бревно" : "Камень",
+        });
+        if (!clearOfJump(d)) continue;
         this.obstacles.push({
           s: d + lap * event.route.length,
           off: (((i * 7 + event.id) % 3) - 1) * 3.85,
@@ -79,7 +88,7 @@ export class Race {
           boost: st.tank,
           duration: 0,
           surface: "dry",
-          lastObstacle: -1,
+          obstacleCooldown: new Map(),
           lap: 0,
           feedback: "",
           air: 0,
@@ -99,6 +108,11 @@ export class Race {
   }
   tick(dt, input) {
     if (this.over) return;
+    if (this.failure) {
+      this.time += dt;
+      this.over = this.time >= this.tipUntil;
+      return;
+    }
     let e = this.event,
       t = e.route;
     const drag = e.type === "Драг";
@@ -131,8 +145,19 @@ export class Race {
       const c = r.id ? drive(r, this, bend) : input;
       if (this.free && !r.id)
         r.surface = roadDistance(r.x, r.z) > raceShoulder ? "grass" : "dry";
+      const previousOffset = r.offset;
       move(r, c, dt, t, e, bend, this.free && !r.id);
-      const hit = this.collides?.(r.x, r.z);
+      if (!this.free && drag && !r.id && r.fatigue >= 1) {
+        this.fail("Сгорел мотор", 1.5);
+        return;
+      }
+      if (!this.free && e.ravine && crossRavine(r, before[r.id], dt, t)) {
+        if (!r.id) { this.fail("Разбился!", 3); return; }
+        r.out = true;
+        r.speed = 0;
+        continue;
+      }
+      const hit = !r.flight && this.collides?.(r.x, r.z);
       if (hit) {
         this.contact(
           r,
@@ -173,14 +198,25 @@ export class Race {
         }
         continue;
       }
-      for (let i = r.lastObstacle + 1; i < this.obstacles.length; i++) {
+      for (let i = 0; i < this.obstacles.length; i++) {
         const o = this.obstacles[i];
-        if (o.s > r.s) break;
-        r.lastObstacle = i;
-        if (Math.abs(r.offset - o.off) < 1.35) {
+        const halfLength = o.kind === "Лужа" ? 2.1 : o.kind === "Бревно" ? 0.82 : 1.35;
+        if (o.s - halfLength > Math.max(r.s,before[r.id])) break;
+        if (Math.min(r.s,before[r.id]) > o.s + halfLength) continue;
+        // Clip the movement segment to the obstacle's longitudinal extent.
+        const span = r.s - before[r.id];
+        const at = edge => previousOffset + (r.offset - previousOffset) *
+          (span ? clamp((edge - before[r.id]) / span, 0, 1) : 1);
+        const a = at(o.s - halfLength), b = at(o.s + halfLength);
+        const halfWidth = o.kind === "Камень" ? 1.70 : o.kind === "Лужа" ? 1.8 : 1.675;
+        if (o.off >= Math.min(a, b) - halfWidth && o.off <= Math.max(a, b) + halfWidth &&
+            this.time >= (r.obstacleCooldown.get(i) || 0)) {
+          r.obstacleCooldown.set(i, this.time + 1);
           if (o.kind !== "Лужа")
             this.contact(r, o.kind === "Камень" ? "stone" : "wood");
           r.speed *= o.kind === "Лужа" ? 0.74 : 0.46;
+          r.vx *= 0.8;
+          r.vz *= 0.8;
           if (!r.id) this.say(o.kind);
         }
       }
@@ -255,7 +291,16 @@ export class Race {
     this.impact = { kind, speed: racer.speed };
     this.nextImpact = this.time + 0.65;
   }
+  fail(message, delay) {
+    const p = this.player;
+    this.failure = this.feedback = message;
+    this.tipUntil = this.time + delay;
+    this.rank = Math.max(2, this.racers.length);
+    this.impact = { kind: "stone", speed: Math.max(12, p.speed) };
+    Object.assign(p, { vx: 0, vz: 0, speed: 0, side: 0, boosting: false });
+  }
   recover() {
+    if (this.failure || this.player.flight) return;
     let p = this.player,
       route = this.event.route,
       pos = route.sample(

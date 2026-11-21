@@ -490,7 +490,7 @@ function frame(now) {
     }
     if (
       r.time - lastStep > Math.max(0.15, 0.45 - r.player.speed * 0.012) &&
-      r.player.speed > 2
+      !r.player.flight && r.player.speed > 2
     ) {
       lastStep = r.time;
       audio.effect(

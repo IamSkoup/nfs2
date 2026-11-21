@@ -94,6 +94,8 @@ function pine() {
   g.computeVertexNormals();
   return g;
 }
+import { carveRavine } from "./ravine.js";
+import { events } from "./config.js";
 export function forest(scene) {
   let ground = new T.PlaneGeometry(1300, 1350, 210, 210);
   ground.rotateX(-Math.PI / 2);
@@ -115,6 +117,7 @@ export function forest(scene) {
   const land = new T.Mesh(ground, material(0xffffff, { vertexColors: true }));
   land.receiveShadow = true;
   scene.add(land);
+  const ravineMeshes = [land];
   const road = material(0xffffff, {
     map: dirt(),
     side: T.DoubleSide,
@@ -148,6 +151,7 @@ export function forest(scene) {
     g.setIndex(idx);
     g.computeVertexNormals();
     const mesh = new T.Mesh(g, road);
+    if (path === edges.GH) ravineMeshes.push(mesh);
     mesh.receiveShadow = true;
     scene.add(mesh);
   }
@@ -180,6 +184,7 @@ export function forest(scene) {
   );
   const batches = new Map(),
     geos = {
+      log: new T.CylinderGeometry(0.85, 1, 1, 10),
       wood: new T.CylinderGeometry(0.64, 1, 1, 7),
       pine: pine(),
       leaves: new T.IcosahedronGeometry(1, 0),
@@ -294,7 +299,7 @@ export function forest(scene) {
       }
       if (i % 36 === 0) {
         add("wood", X + 2, Y + 0.6, Z + 2, 0.6, 1.25, 0.6, 0x6d5546);
-        add("wood", X + 4, Y + 0.5, Z + 3, 0.4, 4, 0.42, 0x5e4f42, h, 1.42);
+        add("log", X + 4, Y + 0.5, Z + 3, 0.4, 4, 0.42, 0x5e4f42, h, 1.42);
       }
     }
   }
@@ -360,7 +365,7 @@ export function forest(scene) {
   }
   const solids = new Map();
   for (const { k, items } of batches.values()) {
-    if (!["wood", "box", "stone"].includes(k)) continue;
+    if (!["wood", "log", "box", "stone"].includes(k)) continue;
     for (const [m] of items) {
       const a = m.elements,
         x = a[12],
@@ -371,6 +376,17 @@ export function forest(scene) {
         );
       if (k === "box" && (radius < 1 || Math.hypot(a[4], a[5], a[6]) < 2))
         continue;
+      if (k === "log") {
+        // Sample the transformed trunk axis, including both cut ends.
+        for (let i = 0; i <= 8; i++) {
+          const t = i / 8 - 0.5;
+          const X = x + t * a[4], Z = z + t * a[6];
+          const cell = Math.floor(X / 12) + "," + Math.floor(Z / 12);
+          if (!solids.has(cell)) solids.set(cell, []);
+          solids.get(cell).push([X, Z, 0.43, false, "log"]);
+        }
+        continue;
+      }
       const key = Math.floor(x / 12) + "," + Math.floor(z / 12);
       if (roadDistance(x, z) < radius + roadHalfWidth + 1) continue;
       if (!solids.has(key)) solids.set(key, []);
@@ -454,5 +470,6 @@ export function forest(scene) {
     m.rotation.y = i;
     scene.add(m);
   }
-  return { chunks, wind, road, collides };
+  const showRavine = carveRavine(ravineMeshes, events.find(e => e.ravine).route);
+  return { chunks, wind, road, collides, showRavine };
 }
